@@ -58,22 +58,50 @@ namespace DabaTaseApp.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
+
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("StartTime,EndTime,Location,Status,InstructorId,GroupId")] TheorySession theorySession)
+
+        public async Task<IActionResult> Create([Bind("StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
+
         {
-            ModelState.Remove("Instructor");
+
+            if (theorySession.EndTime <= theorySession.StartTime)
+
+            {
+
+                ModelState.AddModelError("EndTime", "Час закінченя повинен бути пізніше за час початку.");
+
+            }
+
+
+
             ModelState.Remove("Group");
 
+            ModelState.Remove("Instructor");
+
+
+
             if (ModelState.IsValid)
+
             {
+
                 _context.Add(theorySession);
+
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
+
             }
+
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", theorySession.GroupId);
+
             ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", theorySession.InstructorId);
+
             return View(theorySession);
+
         }
+        
+        
 
         // GET: TheorySessions/Edit/5
         public async Task<IActionResult> Edit(DateTime? startTime, int? instructorId)
@@ -95,42 +123,85 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+
         [HttpPost]
+
         [ValidateAntiForgeryToken]
+
         public async Task<IActionResult> Edit(DateTime startTime, int instructorId, [Bind("StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
+
         {
+
             if (startTime != theorySession.StartTime || instructorId != theorySession.InstructorId)
+
             {
+
                 return NotFound();
+
             }
 
+
+
+            if (theorySession.EndTime <= theorySession.StartTime)
+
+            {
+
+                ModelState.AddModelError("EndTime", "Час закінченя повинен бути пізніше за час початку.");
+
+            }
+
+
+
             ModelState.Remove("Group");
+
             ModelState.Remove("Instructor");
 
+
+
             if (ModelState.IsValid)
+
             {
+
                 try
                 {
+
                     _context.Update(theorySession);
+
                     await _context.SaveChangesAsync();
+
                 }
+
                 catch (DbUpdateConcurrencyException)
+
                 {
+
                     if (!TheorySessionExists(theorySession.StartTime, theorySession.InstructorId))
+
                     {
+
                         return NotFound();
+
                     }
+
                     else
                     {
+
                         throw;
+
                     }
+
                 }
+
                 return RedirectToAction(nameof(Index));
+
             }
 
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", theorySession.GroupId);
+
             ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", theorySession.InstructorId);
+
             return View(theorySession);
+
         }
 
         public async Task<IActionResult> Delete(DateTime? startTime, int? instructorId)
