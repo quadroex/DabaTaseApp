@@ -49,8 +49,8 @@ namespace DabaTaseApp.Controllers
         // GET: PracticeSessions/Create
         public IActionResult Create()
         {
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id");
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id");
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName");
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName");
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber");
             return View();
         }
@@ -62,14 +62,17 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StartTime,EndTime,Status,InstructorId,StudentId,VehiclePlate")] PracticeSession practiceSession)
         {
+            ModelState.Remove("Instructor");
+            ModelState.Remove("Student");
+            ModelState.Remove("VehiclePlateNavigation");
             if (ModelState.IsValid)
             {
                 _context.Add(practiceSession);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", practiceSession.InstructorId);
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", practiceSession.StudentId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", practiceSession.InstructorId);
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", practiceSession.StudentId);
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber", practiceSession.VehiclePlate);
             return View(practiceSession);
         }
@@ -87,8 +90,8 @@ namespace DabaTaseApp.Controllers
             {
                 return NotFound();
             }
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", practiceSession.InstructorId);
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", practiceSession.StudentId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", practiceSession.InstructorId);
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", practiceSession.StudentId);
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber", practiceSession.VehiclePlate);
             return View(practiceSession);
         }
@@ -104,6 +107,10 @@ namespace DabaTaseApp.Controllers
             {
                 return NotFound();
             }
+
+            ModelState.Remove("Instructor");
+ModelState.Remove("Student");
+ModelState.Remove("VehiclePlateNavigation");
 
             if (ModelState.IsValid)
             {
@@ -125,8 +132,8 @@ namespace DabaTaseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", practiceSession.InstructorId);
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", practiceSession.StudentId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", practiceSession.InstructorId);
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", practiceSession.StudentId);
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber", practiceSession.VehiclePlate);
             return View(practiceSession);
         }

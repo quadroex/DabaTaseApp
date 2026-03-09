@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace DabaTaseApp.Models;
 
 public partial class Category
 {
-    [Required(ErrorMessage = "The field cannot be empty.")]
-    [Display(Name = "Category Name")]
+    [Display(Name = "Назва категорії")]
+    [Required(ErrorMessage = "Поле не повинно бути порожнім")]
     public string Name { get; set; } = null!;
 
+    [Display(Name = "Інструктори")]
     public virtual ICollection<Instructor> Instructors { get; set; } = new List<Instructor>();
 }

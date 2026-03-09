@@ -37,8 +37,6 @@ public partial class Lab1Context : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresEnum("session_status", new[] { "PLANNED", "ONGOING", "COMPLETED", "CANCELED" });
-
         modelBuilder.Entity<Category>(entity =>
         {
             entity.HasKey(e => e.Name).HasName("categories_pkey");
@@ -145,6 +143,10 @@ public partial class Lab1Context : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("vehicle_plate");
 
+            entity.Property(e => e.Status)
+                .HasColumnType("character varying")
+                .HasColumnName("status");
+
             entity.HasOne(d => d.Instructor).WithMany(p => p.PracticeSessions)
                 .HasForeignKey(d => d.InstructorId)
                 .HasConstraintName("practice_sessions_instructor_id_fkey");
@@ -196,6 +198,10 @@ public partial class Lab1Context : DbContext
             entity.Property(e => e.Location)
                 .HasColumnType("character varying")
                 .HasColumnName("location");
+
+            entity.Property(e => e.Status)
+                .HasColumnType("character varying")
+                .HasColumnName("status");
 
             entity.HasOne(d => d.Group).WithMany(p => p.TheorySessions)
                 .HasForeignKey(d => d.GroupId)

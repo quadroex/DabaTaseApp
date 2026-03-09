@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.TheorySession>
 
 @{
-    Layout = null;
+    
 }
 
 <!DOCTYPE html>
@@ -49,15 +49,15 @@
                 @Html.DisplayFor(modelItem => item.Status)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Group.Id)
+                @Html.DisplayFor(modelItem => item.Group.GroupName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Instructor.Id)
+                @Html.DisplayFor(modelItem => item.Instructor.FullName)
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+                @Html.ActionLink("Edit", "Edit", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId }) |
+                @Html.ActionLink("Details", "Details", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId }) |
+                @Html.ActionLink("Delete", "Delete", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId })
             </td>
         </tr>
 }

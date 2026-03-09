@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.PracticeSession>
 
 @{
-    Layout = null;
+    
 }
 
 <!DOCTYPE html>
@@ -52,10 +52,10 @@
                 @Html.DisplayFor(modelItem => item.Status)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Instructor.Id)
+                @Html.DisplayFor(modelItem => item.Instructor.FullName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Student.Id)
+                @Html.DisplayFor(modelItem => item.Student.FullName)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.VehiclePlateNavigation.PlateNumber)

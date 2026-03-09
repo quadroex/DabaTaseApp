@@ -47,7 +47,7 @@ namespace DabaTaseApp.Controllers
         // GET: Payments/Create
         public IActionResult Create()
         {
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id");
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName");
             return View();
         }
 
@@ -58,36 +58,21 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StudentId,Amount,PaymentDate")] Payment payment)
         {
+            payment.Student = await _context.Students.FirstOrDefaultAsync(s => s.Id == payment.StudentId);
+
+            ModelState.Clear();
+            TryValidateModel(payment);
+
             if (ModelState.IsValid)
             {
                 _context.Add(payment);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", payment.StudentId);
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", payment.StudentId);
             return View(payment);
         }
 
-        // GET: Payments/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var payment = await _context.Payments.FindAsync(id);
-            if (payment == null)
-            {
-                return NotFound();
-            }
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", payment.StudentId);
-            return View(payment);
-        }
-
-        // POST: Payments/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,StudentId,Amount,PaymentDate")] Payment payment)
@@ -96,6 +81,11 @@ namespace DabaTaseApp.Controllers
             {
                 return NotFound();
             }
+
+            payment.Student = await _context.Students.FirstOrDefaultAsync(s => s.Id == payment.StudentId);
+
+            ModelState.Clear();
+            TryValidateModel(payment);
 
             if (ModelState.IsValid)
             {
@@ -117,7 +107,7 @@ namespace DabaTaseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "Id", payment.StudentId);
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", payment.StudentId);
             return View(payment);
         }
 

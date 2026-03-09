@@ -21,7 +21,11 @@ namespace DabaTaseApp.Controllers
         // GET: Students
         public async Task<IActionResult> Index(int? id, string? name)
         {
-            if (id == null) return RedirectToAction("Index", "Groups");
+            if (id == null)
+            {
+                var allStudents = _context.Students.Include(s => s.Group);
+                return View(await allStudents.ToListAsync());
+            }
 
             ViewBag.GroupId = id;
             ViewBag.GroupName = name;
@@ -50,10 +54,17 @@ namespace DabaTaseApp.Controllers
         }
 
         // GET: Students/Create
-        public IActionResult Create(int categoryId)
+        public IActionResult Create(int? categoryId)
         {
-            ViewBag.GroupId = categoryId;
-            ViewBag.GroupName = _context.Groups.Where(c => c.Id == categoryId).FirstOrDefault()?.GroupName;
+            if (categoryId != null)
+            {
+                ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", categoryId);
+            }
+            else
+            {
+                ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName");
+            }
+
             return View();
         }
 
@@ -62,46 +73,36 @@ namespace DabaTaseApp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FullName,GroupId,Balance,TargetCategory")] Student student)
+        public async Task<IActionResult> Create([Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
+            student.Group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == student.GroupId);
+
+            ModelState.Clear();
+            TryValidateModel(student);
+
             if (ModelState.IsValid)
             {
                 _context.Add(student);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", student.GroupId);
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
             return View(student);
         }
 
-        // GET: Students/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var student = await _context.Students.FindAsync(id);
-            if (student == null)
-            {
-                return NotFound();
-            }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", student.GroupId);
-            return View(student);
-        }
-
-        // POST: Students/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,GroupId,Balance,TargetCategory")] Student student)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
             if (id != student.Id)
             {
                 return NotFound();
             }
+
+            student.Group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == student.GroupId);
+
+            ModelState.Clear();
+            TryValidateModel(student);
 
             if (ModelState.IsValid)
             {
@@ -123,7 +124,7 @@ namespace DabaTaseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", student.GroupId);
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
             return View(student);
         }
 

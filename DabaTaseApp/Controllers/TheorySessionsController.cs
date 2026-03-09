@@ -26,9 +26,9 @@ namespace DabaTaseApp.Controllers
         }
 
         // GET: TheorySessions/Details/5
-        public async Task<IActionResult> Details(DateTime? id)
+        public async Task<IActionResult> Details(DateTime? startTime, int? instructorId)
         {
-            if (id == null)
+            if (startTime == null || instructorId == null)
             {
                 return NotFound();
             }
@@ -36,7 +36,8 @@ namespace DabaTaseApp.Controllers
             var theorySession = await _context.TheorySessions
                 .Include(t => t.Group)
                 .Include(t => t.Instructor)
-                .FirstOrDefaultAsync(m => m.StartTime == id);
+                .FirstOrDefaultAsync(m => m.StartTime == startTime && m.InstructorId == instructorId);
+
             if (theorySession == null)
             {
                 return NotFound();
@@ -48,8 +49,8 @@ namespace DabaTaseApp.Controllers
         // GET: TheorySessions/Create
         public IActionResult Create()
         {
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id");
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id");
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName");
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName");
             return View();
         }
 
@@ -60,46 +61,51 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("StartTime,EndTime,Location,Status,InstructorId,GroupId")] TheorySession theorySession)
         {
+            ModelState.Remove("Instructor");
+            ModelState.Remove("Group");
+
             if (ModelState.IsValid)
             {
                 _context.Add(theorySession);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", theorySession.GroupId);
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", theorySession.InstructorId);
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", theorySession.GroupId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", theorySession.InstructorId);
             return View(theorySession);
         }
 
         // GET: TheorySessions/Edit/5
-        public async Task<IActionResult> Edit(DateTime? id)
+        public async Task<IActionResult> Edit(DateTime? startTime, int? instructorId)
         {
-            if (id == null)
+            if (startTime == null || instructorId == null)
             {
                 return NotFound();
             }
 
-            var theorySession = await _context.TheorySessions.FindAsync(id);
+            var theorySession = await _context.TheorySessions.FindAsync(startTime, instructorId);
+
             if (theorySession == null)
             {
                 return NotFound();
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", theorySession.GroupId);
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", theorySession.InstructorId);
+
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", theorySession.GroupId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", theorySession.InstructorId);
             return View(theorySession);
         }
 
-        // POST: TheorySessions/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(DateTime id, [Bind("StartTime,EndTime,Location,Status,InstructorId,GroupId")] TheorySession theorySession)
+        public async Task<IActionResult> Edit(DateTime startTime, int instructorId, [Bind("StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
         {
-            if (id != theorySession.StartTime)
+            if (startTime != theorySession.StartTime || instructorId != theorySession.InstructorId)
             {
                 return NotFound();
             }
+
+            ModelState.Remove("Group");
+            ModelState.Remove("Instructor");
 
             if (ModelState.IsValid)
             {
@@ -110,7 +116,7 @@ namespace DabaTaseApp.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TheorySessionExists(theorySession.StartTime))
+                    if (!TheorySessionExists(theorySession.StartTime, theorySession.InstructorId))
                     {
                         return NotFound();
                     }
@@ -121,15 +127,15 @@ namespace DabaTaseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "Id", theorySession.GroupId);
-            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "Id", theorySession.InstructorId);
+
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", theorySession.GroupId);
+            ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", theorySession.InstructorId);
             return View(theorySession);
         }
 
-        // GET: TheorySessions/Delete/5
-        public async Task<IActionResult> Delete(DateTime? id)
+        public async Task<IActionResult> Delete(DateTime? startTime, int? instructorId)
         {
-            if (id == null)
+            if (startTime == null || instructorId == null)
             {
                 return NotFound();
             }
@@ -137,7 +143,8 @@ namespace DabaTaseApp.Controllers
             var theorySession = await _context.TheorySessions
                 .Include(t => t.Group)
                 .Include(t => t.Instructor)
-                .FirstOrDefaultAsync(m => m.StartTime == id);
+                .FirstOrDefaultAsync(m => m.StartTime == startTime && m.InstructorId == instructorId);
+
             if (theorySession == null)
             {
                 return NotFound();
@@ -146,12 +153,12 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
-        // POST: TheorySessions/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(DateTime id)
+        public async Task<IActionResult> DeleteConfirmed(DateTime startTime, int instructorId)
         {
-            var theorySession = await _context.TheorySessions.FindAsync(id);
+            var theorySession = await _context.TheorySessions.FindAsync(startTime, instructorId);
+
             if (theorySession != null)
             {
                 _context.TheorySessions.Remove(theorySession);
@@ -161,9 +168,9 @@ namespace DabaTaseApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TheorySessionExists(DateTime id)
+        private bool TheorySessionExists(DateTime startTime, int instructorId)
         {
-            return _context.TheorySessions.Any(e => e.StartTime == id);
+            return _context.TheorySessions.Any(e => e.StartTime == startTime && e.InstructorId == instructorId);
         }
     }
 }

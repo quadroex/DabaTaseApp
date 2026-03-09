@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.Student>
 
 @{
-    Layout = null;
+    
 }
 
 <!DOCTYPE html>
@@ -46,7 +46,7 @@
                 @Html.DisplayFor(modelItem => item.TargetCategory)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Group.Id)
+                @Html.DisplayFor(modelItem => item.Group.GroupName)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

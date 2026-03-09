@@ -47,7 +47,7 @@ namespace DabaTaseApp.Controllers
         // GET: Groups/Create
         public IActionResult Create()
         {
-            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "Id");
+            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "FullName");
             return View();
         }
 
@@ -56,15 +56,21 @@ namespace DabaTaseApp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,GroupName,TheoryInstructorId,StartDate,EndDate")] Group @group)
+        public async Task<IActionResult> Create([Bind("Id,GroupName,StartDate,EndDate,TheoryInstructorId")] Group @group)
         {
+            var instructor = await _context.Instructors.FirstOrDefaultAsync(i => i.Id == @group.TheoryInstructorId);
+            @group.TheoryInstructor = instructor;
+
+            ModelState.Clear();
+            TryValidateModel(@group);
+
             if (ModelState.IsValid)
             {
                 _context.Add(@group);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "Id", @group.TheoryInstructorId);
+            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", @group.TheoryInstructorId);
             return View(@group);
         }
 
@@ -81,7 +87,7 @@ namespace DabaTaseApp.Controllers
             {
                 return NotFound();
             }
-            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "Id", @group.TheoryInstructorId);
+            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", @group.TheoryInstructorId);
             return View(@group);
         }
 
@@ -96,6 +102,11 @@ namespace DabaTaseApp.Controllers
             {
                 return NotFound();
             }
+
+            group.TheoryInstructor = await _context.Instructors.FirstOrDefaultAsync(i => i.Id == group.TheoryInstructorId);
+
+            ModelState.Clear();
+            TryValidateModel(group);
 
             if (ModelState.IsValid)
             {
@@ -117,7 +128,7 @@ namespace DabaTaseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "Id", @group.TheoryInstructorId);
+            ViewData["TheoryInstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", @group.TheoryInstructorId);
             return View(@group);
         }
 
