@@ -32,7 +32,12 @@
             </div>
             <div class="mb-3">
                 <label asp-for="Status" class="control-label"></label>
-                <input asp-for="Status" class="form-control" />
+                    <select asp-for="Status" class="form-control">
+                        <option value="Заплановано">Заплановано</option>
+                        <option value="Триває">Триває</option>
+                        <option value="Завершено">Завершено</option>
+                        <option value="Скасовано">Скасовано</option>
+                    </select>
                 <span asp-validation-for="Status" class="text-danger"></span>
             </div>
             <div class="mb-3">

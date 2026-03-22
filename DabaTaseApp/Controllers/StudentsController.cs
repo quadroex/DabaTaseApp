@@ -34,7 +34,7 @@ namespace DabaTaseApp.Controllers
             return View(await studentsByGroup.ToListAsync());
         }
 
-        // GET: Students/Details/5
+        // GET: Students/Details
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -75,10 +75,9 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
-            student.Group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == student.GroupId);
-
-            ModelState.Clear();
-            TryValidateModel(student);
+            ModelState.Remove("Group");
+            ModelState.Remove("Payments");
+            ModelState.Remove("PracticeSessions");
 
             if (ModelState.IsValid)
             {
@@ -90,19 +89,27 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
+        // GET: Students/Edit
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var student = await _context.Students.FindAsync(id);
+            if (student == null) return NotFound();
+
+            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
+            return View(student);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
-            if (id != student.Id)
-            {
-                return NotFound();
-            }
+            if (id != student.Id) return NotFound();
 
-            student.Group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == student.GroupId);
-
-            ModelState.Clear();
-            TryValidateModel(student);
+            ModelState.Remove("Group");
+            ModelState.Remove("Payments");
+            ModelState.Remove("PracticeSessions");
 
             if (ModelState.IsValid)
             {
@@ -113,14 +120,8 @@ namespace DabaTaseApp.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StudentExists(student.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    if (!_context.Students.Any(e => e.Id == student.Id)) return NotFound();
+                    else throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -128,7 +129,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        // GET: Students/Delete/5
+        // GET: Students/Delete
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -147,7 +148,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        // POST: Students/Delete/5
+        // POST: Students/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

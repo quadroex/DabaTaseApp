@@ -19,6 +19,9 @@
     <thead>
         <tr>
             <th>
+                @Html.DisplayNameFor(model => model.StartTime)
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.EndTime)
             </th>
             <th>
@@ -40,6 +43,9 @@
 @foreach (var item in Model) {
         <tr>
             <td>
+                @Html.DisplayFor(modelItem => item.StartTime)
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.EndTime)
             </td>
             <td>
@@ -55,9 +61,9 @@
                 @Html.DisplayFor(modelItem => item.Instructor.FullName)
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId }) |
-                @Html.ActionLink("Details", "Details", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId }) |
-                @Html.ActionLink("Delete", "Delete", new { startTime = item.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"), instructorId = item.InstructorId })
+                @Html.ActionLink("Edit", "Змінити", item.Id) |
+                @Html.ActionLink("Details", "Деталі", item.Id) |
+                @Html.ActionLink("Delete", "Видалити", item.Id)
             </td>
         </tr>
 }

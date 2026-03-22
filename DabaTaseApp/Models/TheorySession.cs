@@ -7,6 +7,8 @@ namespace DabaTaseApp.Models;
 
 public partial class TheorySession : IValidatableObject
 {
+    public int Id { get; set; }
+
     [Display(Name = "Час початку")]
     public DateTime StartTime { get; set; }
 

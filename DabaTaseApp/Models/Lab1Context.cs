@@ -183,7 +183,7 @@ public partial class Lab1Context : DbContext
 
         modelBuilder.Entity<TheorySession>(entity =>
         {
-            entity.HasKey(e => new { e.StartTime, e.InstructorId }).HasName("theory_sessions_pkey");
+            entity.HasKey(e => e.Id).HasName("theory_sessions_pkey");
 
             entity.ToTable("theory_sessions");
 

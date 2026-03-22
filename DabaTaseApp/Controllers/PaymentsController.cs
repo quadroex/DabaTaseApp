@@ -25,7 +25,7 @@ namespace DabaTaseApp.Controllers
             return View(await lab1Context.ToListAsync());
         }
 
-        // GET: Payments/Details/5
+        // GET: Payments/Details
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -58,10 +58,7 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StudentId,Amount,PaymentDate")] Payment payment)
         {
-            payment.Student = await _context.Students.FirstOrDefaultAsync(s => s.Id == payment.StudentId);
-
-            ModelState.Clear();
-            TryValidateModel(payment);
+            ModelState.Remove("Student");
 
             if (ModelState.IsValid)
             {
@@ -73,19 +70,25 @@ namespace DabaTaseApp.Controllers
             return View(payment);
         }
 
+        // GET: Payments/Edit
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var payment = await _context.Payments.FindAsync(id);
+            if (payment == null) return NotFound();
+
+            ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", payment.StudentId);
+            return View(payment);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,StudentId,Amount,PaymentDate")] Payment payment)
         {
-            if (id != payment.Id)
-            {
-                return NotFound();
-            }
+            if (id != payment.Id) return NotFound();
 
-            payment.Student = await _context.Students.FirstOrDefaultAsync(s => s.Id == payment.StudentId);
-
-            ModelState.Clear();
-            TryValidateModel(payment);
+            ModelState.Remove("Student");
 
             if (ModelState.IsValid)
             {
@@ -96,14 +99,8 @@ namespace DabaTaseApp.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!PaymentExists(payment.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    if (!_context.Payments.Any(e => e.Id == payment.Id)) return NotFound();
+                    else throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -111,7 +108,7 @@ namespace DabaTaseApp.Controllers
             return View(payment);
         }
 
-        // GET: Payments/Delete/5
+        // GET: Payments/Delete
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -130,7 +127,7 @@ namespace DabaTaseApp.Controllers
             return View(payment);
         }
 
-        // POST: Payments/Delete/5
+        // POST: Payments/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
