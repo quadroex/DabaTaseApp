@@ -20,13 +20,13 @@ public partial class Group : IValidatableObject
     public DateOnly EndDate { get; set; }
 
     [Display(Name = "Інструктор з теорії")]
-    public int TheoryInstructorId { get; set; }
+    public int? TheoryInstructorId { get; set; }
 
     [Display(Name = "Учні")]
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 
     [Display(Name = "Інструктор з теорії")]
-    public virtual Instructor TheoryInstructor { get; set; } = null!;
+    public virtual Instructor? TheoryInstructor { get; set; } = null!;
 
     [Display(Name = "Теоретичні заняття")]
     public virtual ICollection<TheorySession> TheorySessions { get; set; } = new List<TheorySession>();

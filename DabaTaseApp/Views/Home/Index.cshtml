@@ -1,18 +1,90 @@
 ﻿@{
-    ViewData["Title"] = "Головна сторінка";
+    ViewData["Title"] = "Керування аналітикою";
 }
 
-<div class="text-center mb-5">
-    <h1 class="display-4">Головна сторінка</h1>
-    <p>Статистика та показники</p>
+<div class="card-custom mb-4 py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold m-0 text-primary"><i class="bi bi-filter-left me-2"></i>Фільтр періоду</h4>
+            <small class="text-muted">Оберіть дати для оновлення фінансових та операційних показників</small>
+        </div>
+        <div class="d-flex align-items-center gap-2 bg-light p-2 rounded-4 border shadow-sm">
+            <input type="date" id="startDate" class="form-control form-control-sm border-0 bg-transparent shadow-none" style="width: 150px;" />
+            <span class="text-muted fw-bold">-</span>
+            <input type="date" id="endDate" class="form-control form-control-sm border-0 bg-transparent shadow-none" style="width: 150px;" />
+            <button id="filterBtn" class="btn btn-primary btn-sm px-4 rounded-3 shadow-sm">Застосувати</button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-12 col-md-6 col-xl-3 mb-3 mb-xl-0">
+        <div class="stat-card" style="border-left-color: #4f46e5;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Загальний дохід</div>
+                    <div class="fs-3 fw-bold text-dark">@ViewBag.TotalRevenue.ToString("N0") ₴</div>
+                </div>
+                <div class="bg-light p-3 rounded-circle text-primary shadow-sm"><i class="bi bi-wallet2 fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3 mb-3 mb-xl-0">
+        <div class="stat-card" style="border-left-color: #10b981;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Активних учнів</div>
+                    <div class="fs-3 fw-bold text-dark">@ViewBag.TotalStudents</div>
+                </div>
+                <div class="bg-light p-3 rounded-circle text-success shadow-sm"><i class="bi bi-people fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3 mb-3 mb-md-0">
+        <div class="stat-card" style="border-left-color: #f59e0b;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Авто на ходу</div>
+                    <div class="fs-3 fw-bold text-dark">@ViewBag.ActiveVehicles</div>
+                </div>
+                <div class="bg-light p-3 rounded-circle text-warning shadow-sm"><i class="bi bi-car-front fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="stat-card" style="border-left-color: #ef4444;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Актуальні заняття</div>
+                    <div class="fs-3 fw-bold text-dark">@ViewBag.ActiveSessions</div>
+                </div>
+                <div class="bg-light p-3 rounded-circle text-danger shadow-sm"><i class="bi bi-cone-striped fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12 col-xl-8 mb-4 mb-xl-0">
+        <div class="card-custom h-100">
+            <h5 class="fw-bold mb-4">Динаміка прибутку</h5>
+            <div id="revenueChart" style="width: 100%; height: 350px;"></div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-4">
+        <div class="card-custom h-100">
+            <h5 class="fw-bold mb-4">Розподіл за категоріями</h5>
+            <div id="categoryChart" style="width: 100%; height: 350px;"></div>
+        </div>
+    </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div id="studentsByCategoryChart" style="width: 100%; height: 400px;"></div>
-    </div>
-    <div class="col-md-6">
-        <div id="sessionsByInstructorChart" style="width: 100%; height: 400px;"></div>
+    <div class="col-12">
+        <div class="card-custom">
+            <h5 class="fw-bold mb-4">Навантаження інструкторів</h5>
+            <div id="instructorChart" style="width: 100%; height: 350px;"></div>
+        </div>
     </div>
 </div>
 
@@ -20,48 +92,83 @@
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         google.charts.load('current', { 'packages': ['corechart'] });
-        google.charts.setOnLoadCallback(drawCharts);
+        google.charts.setOnLoadCallback(refreshDashboard);
 
-        function drawCharts() {
+        function refreshDashboard() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+            
+        drawCategory();
+        drawRevenue(start, end);
+        drawInstructors(start, end);
+        }
+
+        function drawCategory() {
         fetch('/api/charts/studentsByCategory')
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-        const dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('string', 'Категорія');
-        dataTable.addColumn('number', 'Кількість учнів');
-                    
-        data.forEach(item => {
-        dataTable.addRow([item.category, item.count]);
+        if (data.length === 0) return;
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'X'); dt.addColumn('number', 'Y');
+        data.forEach(i => dt.addRow([i.label, i.value]));
+        new google.visualization.PieChart(document.getElementById('categoryChart')).draw(dt, {
+        pieHole: 0.4,
+        colors: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'],
+        chartArea: { width: '90%', height: '80%' },
+        legend: { position: 'bottom' }
         });
-
-        const options = {
-        title: 'Розподіл учнів за категоріями',
-        pieHole: 0.4
-        };
-
-        const chart = new google.visualization.PieChart(document.getElementById('studentsByCategoryChart'));
-        chart.draw(dataTable, options);
-        });
-
-        fetch('/api/charts/sessionsByInstructor')
-        .then(response => response.json())
-        .then(data => {
-        const dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('string', 'Інструктор');
-        dataTable.addColumn('number', 'Кількість занять');
-                    
-        data.forEach(item => {
-        dataTable.addRow([item.instructor, item.count]);
-        });
-
-        const options = {
-        title: 'Кількість практичних занять по інструкторах',
-        legend: { position: 'none' }
-        };
-
-        const chart = new google.visualization.ColumnChart(document.getElementById('sessionsByInstructorChart'));
-        chart.draw(dataTable, options);
         });
         }
+
+        function drawRevenue(start, end) {
+        let url = `/api/charts/revenueByDate?startDate=${start}&endDate=${end}`;
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
+        const container = document.getElementById('revenueChart');
+        if (!data || data.length === 0) {
+        container.innerHTML = '<div class="d-flex h-100 align-items-center justify-content-center text-muted">Транзакції за обраний період відсутні</div>';
+        return;
+        }
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'Дата'); dt.addColumn('number', 'Сума');
+        data.forEach(i => dt.addRow([i.label, i.value]));
+
+        const options = {
+        colors: ['#10b981'], areaOpacity: 0.1,
+        chartArea: { width: '85%', height: '70%' },
+        legend: { position: 'none' },
+        vAxis: { minValue: 0 },
+        animation: { startup: true, duration: 1000, easing: 'out' }
+        };
+        const chart = data.length === 1
+        ? new google.visualization.ColumnChart(container)
+        : new google.visualization.AreaChart(container);
+        chart.draw(dt, options);
+        });
+        }
+
+        function drawInstructors(start, end) {
+        let url = `/api/charts/sessionsByInstructor?startDate=${start}&endDate=${end}`;
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
+        const container = document.getElementById('instructorChart');
+        if (data.length === 0) {
+        container.innerHTML = '<div class="d-flex h-100 align-items-center justify-content-center text-muted">Заняття не знайдено</div>';
+        return;
+        }
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'Викладач'); dt.addColumn('number', 'Заняття');
+        data.forEach(i => dt.addRow([i.label, i.value]));
+        new google.visualization.ColumnChart(container).draw(dt, {
+        colors: ['#4f46e5'],
+        chartArea: { width: '90%', height: '75%' },
+        legend: { position: 'none' }
+        });
+        });
+        }
+
+        document.getElementById('filterBtn').addEventListener('click', refreshDashboard);
     </script>
 }

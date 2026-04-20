@@ -1,51 +1,85 @@
 ﻿@model DabaTaseApp.Models.Group
-
 @{
-    
+    ViewData["Title"] = "Деталі групи " + Model.GroupName;
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Details</title>
-</head>
-<body>
-
-<div>
-    <h4>Group</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.GroupName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.GroupName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TheoryInstructor)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TheoryInstructor.Id)
-        </dd>
-    </dl>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0 text-primary">@Model.GroupName</h1>
+        <p class="text-muted">Період навчання: @Model.StartDate.ToShortDateString() — @Model.EndDate.ToShortDateString()</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="ExportSingle" asp-route-id="@Model.Id" class="btn btn-success shadow-sm">
+            <i class="bi bi-file-earmark-excel me-2"></i>Експортувати звіт
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-pencil me-2"></i>Редагувати
+        </a>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card-custom h-100 p-4 text-center">
+            <div class="bg-primary-soft rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                <i class="bi bi-person-badge fs-1 text-primary"></i>
+            </div>
+            <h5 class="fw-bold">Інструктор теорії</h5>
+            <p class="text-dark fs-5">@(Model.TheoryInstructor?.FullName ?? "Не призначено")</p>
+            <hr />
+            <div class="row text-start small">
+                <div class="col-6 text-muted">Кількість учнів:</div>
+                <div class="col-6 fw-bold text-end">@Model.Students.Count</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card-custom h-100 bg-light border-0 p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>Швидкий імпорт учнів у цю групу</h5>
+            <p class="small text-muted">Оберіть .xlsx-файл, щоб миттєво додати учнів до складу цієї групи.</p>
+            <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3">
+                <input type="hidden" name="groupId" value="@Model.Id" />
+                <input type="file" name="fileExcel" class="form-control" accept=".xlsx" required />
+                <button type="submit" class="btn btn-warning px-4 fw-bold">Завантажити</button>
+            </form>
+        </div>
+    </div>
 </div>
-</body>
-</html>
+
+<div class="card-custom p-0 overflow-hidden">
+    <div class="p-4 border-bottom bg-white d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold m-0">Список учнів групи</h5>
+        <span class="badge bg-primary rounded-pill">@Model.Students.Count осіб</span>
+    </div>
+    <table class="table mb-0">
+        <thead class="table-light">
+            <tr>
+                <th class="ps-4">ПІБ Учня</th>
+                <th>Категорія</th>
+                <th>Баланс</th>
+                <th class="text-end pe-4">Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model.Students)
+            {
+                <tr>
+                    <td class="ps-4 fw-bold">@s.FullName</td>
+                    <td><span class="badge bg-light text-dark border">@s.TargetCategory</span></td>
+                    <td class="text-@(s.Balance < 0 ? "danger" : "success") fw-bold">@s.Balance.ToString("N2") ₴</td>
+                    <td class="text-end pe-4">
+                        <a asp-controller="Students" asp-action="Details" asp-route-id="@s.Id" class="btn-action"><i class="bi bi-eye"></i></a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Students.Any())
+            {
+                <tr><td colspan="4" class="text-center py-5 text-muted">У цій групі ще немає жодного учня</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-link text-muted"><i class="bi bi-arrow-left me-2"></i>Назад до списку груп</a>
+</div>

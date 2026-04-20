@@ -1,73 +1,57 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.TheorySession>
-
 @{
-    
+    ViewData["Title"] = "Теоретичні заняття";
 }
 
-<!DOCTYPE html>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">Заняття з теорії</h1>
+        <p class="text-muted mb-0">Розклад лекційних та аудиторних занять</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-2"></i>Нове заняття</a>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Index</title>
-</head>
-<body>
-<p>
-    <a asp-action="Create">Створити</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.StartTime)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.EndTime)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Location)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Group)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Instructor)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.StartTime)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EndTime)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Location)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Group.GroupName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Instructor.FullName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
-</body>
-</html>
+<div class="card-custom">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Час проведення</th>
+                <th>Група</th>
+                <th>Аудиторія</th>
+                <th>Статус</th>
+                <th class="text-end">Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var statusClass = item.Status switch
+                {
+                    "Заплановано" => "status-planned",
+                    "Триває" => "status-ongoing",
+                    "Завершено" => "status-done",
+                    _ => "status-cancelled"
+                };
+                <tr>
+                    <td>
+                        <div class="fw-bold">@item.StartTime.ToString("dd.MM.yyyy")</div>
+                        <div class="small text-muted">@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-primary">@item.Group?.GroupName</div>
+                        <div class="small text-muted"><i class="bi bi-person me-1"></i>@item.Instructor?.FullName</div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.Location</span></td>
+                    <td><span class="status-badge @statusClass">@item.Status</span></td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-pencil-square text-primary"></i></a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-info-circle text-info"></i></a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-trash3 text-danger"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

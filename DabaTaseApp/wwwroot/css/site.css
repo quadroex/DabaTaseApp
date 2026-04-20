@@ -1,96 +1,178 @@
-/* Підключення преміального шрифту */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
     --primary: #4f46e5;
     --primary-hover: #4338ca;
+    --secondary: #3b82f6;
     --bg-main: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --radius: 12px;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --text-main: #0f172a; 
+    --text-muted: #64748b; 
+    --border-color: #e2e8f0; 
+    --radius: 16px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+    --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
 }
 
 body {
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-main);
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 24px 24px;
     color: var(--text-main);
-    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Контейнер-картка для контенту кожної сторінки */
-main {
+.navbar {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%) !important;
+    padding: 1rem 2rem;
+    box-shadow: var(--shadow-lg);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    color: #ffffff !important;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    font-weight: 500;
+    color: #cbd5e1 !important;
+    padding: 0.6rem 1rem !important;
+    margin: 0 4px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+    .nav-link:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link.active {
+        color: #ffffff !important;
+        background: var(--primary);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        transform: translateY(-1px);
+    }
+
+.page-header {
+    background: #ffffff;
+    padding: 2rem 0;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+}
+
+.breadcrumb-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.card-custom {
     background: var(--card-bg);
+    backdrop-filter: blur(10px);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255,255,255,0.8);
     padding: 2rem;
-    box-shadow: var(--shadow);
-    margin-top: 1rem;
-    border: 1px solid var(--border);
+    margin-bottom: 2rem;
 }
 
-/* Сучасна таблиця */
+h1, h2 {
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.03em;
+}
+
 .table {
+    margin-top: 1rem;
     border-collapse: separate;
     border-spacing: 0;
-    width: 100%;
-    margin: 1.5rem 0;
-    border-radius: var(--radius);
 }
 
     .table thead th {
-        background-color: #f1f5f9;
+        background: transparent;
+        border-bottom: 2px solid var(--border-color);
         color: var(--text-muted);
-        font-weight: 600;
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         padding: 1rem;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
     }
 
-    .table tbody td {
+    .table tbody tr {
+        transition: all 0.2s;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f1f5f9;
+            transform: scale(1.002);
+        }
+
+    .table td {
         padding: 1.25rem 1rem;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
     }
 
-    .table tr:hover {
-        background-color: #fdfdfd;
-    }
-
-/* Кнопки в стилі Modern UI */
-.btn {
+.btn-action {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 8px;
-    font-weight: 500;
-    padding: 0.6rem 1.2rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 0.875rem;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    color: var(--text-muted);
 }
 
-.btn-primary {
-    background-color: var(--primary);
-    border: none;
-    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
-}
-
-    .btn-primary:hover {
-        background-color: var(--primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(79, 70, 229, 0.4);
-    }
-
-/* Форми та поля вводу */
-.form-control {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem;
-    font-size: 0.95rem;
-}
-
-    .form-control:focus {
+    .btn-action:hover {
+        background: var(--bg-main);
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
     }
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-planned {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.status-ongoing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-done {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}

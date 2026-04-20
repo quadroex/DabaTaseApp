@@ -113,17 +113,17 @@ namespace DabaTaseApp.Controllers
             {
                 var worksheet = workbook.Worksheets.Add("Categories");
                 var currentRow = 1;
-                worksheet.Cell(currentRow, 1).Value = "Id";
-                worksheet.Cell(currentRow, 2).Value = "Name";
-                worksheet.Cell(currentRow, 3).Value = "Description";
+                worksheet.Cell(currentRow, 1).Value = "Name";
+                worksheet.Cell(currentRow, 2).Value = "Description";
+                worksheet.Range(1, 1, 1, 2).Style.Font.Bold = true;
 
                 foreach (var category in categories)
                 {
                     currentRow++;
-                    worksheet.Cell(currentRow, 1).Value = category.Id;
-                    worksheet.Cell(currentRow, 2).Value = category.Name;
-                    worksheet.Cell(currentRow, 3).Value = category.Description;
+                    worksheet.Cell(currentRow, 1).Value = category.Name;
+                    worksheet.Cell(currentRow, 2).Value = category.Description;
                 }
+                worksheet.Columns().AdjustToContents();
 
                 using (var stream = new MemoryStream())
                 {
@@ -138,7 +138,14 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Import(IFormFile fileExcel)
         {
-            if (fileExcel != null && fileExcel.Length > 0)
+            if (fileExcel == null || fileExcel.Length == 0) return RedirectToAction(nameof(Index));
+
+            var logBuilder = new System.Text.StringBuilder();
+            logBuilder.AppendLine($"--- Журнал імпорту від {DateTime.Now} ---");
+            int successCount = 0;
+            int errorCount = 0;
+
+            try
             {
                 using (var stream = new MemoryStream())
                 {
@@ -148,25 +155,51 @@ namespace DabaTaseApp.Controllers
                         var worksheet = workbook.Worksheet(1);
                         var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
 
+                        int rowIndex = 1;
                         foreach (var row in rows)
                         {
-                            var name = row.Cell(2).GetValue<string>();
-                            var description = row.Cell(3).GetValue<string>();
+                            rowIndex++;
+                            var name = row.Cell(1).GetValue<string>();
+                            var description = row.Cell(2).GetValue<string>();
 
-                            if (!_context.Categories.Any(c => c.Name == name))
+                            if (string.IsNullOrWhiteSpace(name))
                             {
-                                var category = new Category
-                                {
-                                    Name = name,
-                                    Description = description
-                                };
-                                _context.Categories.Add(category);
+                                logBuilder.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Назва категорії порожня. Запис проігноровано.");
+                                errorCount++;
+                                continue;
                             }
+
+                            if (_context.Categories.Any(c => c.Name == name))
+                            {
+                                logBuilder.AppendLine($"[ПОПЕРЕДЖЕННЯ] Рядок {rowIndex}: Категорія '{name}' вже існує. Запис проігноровано.");
+                                errorCount++;
+                                continue;
+                            }
+
+                            _context.Categories.Add(new Category { Name = name, Description = description });
+                            logBuilder.AppendLine($"[УСПІХ] Рядок {rowIndex}: Додано категорію '{name}'.");
+                            successCount++;
                         }
                         await _context.SaveChangesAsync();
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                logBuilder.AppendLine($"[КРИТИЧНИЙ ЗБІЙ] Помилка читання файлу: {ex.Message}");
+                errorCount++;
+            }
+
+            logBuilder.AppendLine($"\n--- Підсумок ---");
+            logBuilder.AppendLine($"Успішно додано: {successCount}");
+            logBuilder.AppendLine($"Пропущено/Помилок: {errorCount}");
+
+            if (errorCount > 0)
+            {
+                var logBytes = System.Text.Encoding.UTF8.GetBytes(logBuilder.ToString());
+                return File(logBytes, "text/plain", $"Import_Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

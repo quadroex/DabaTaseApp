@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace DabaTaseApp.Models;
 
-public partial class Lab1Context : DbContext
+public partial class Lab1Context : DbContext //IdentityDbContext<IdentityUser>
 {
     public Lab1Context()
     {
@@ -33,6 +35,8 @@ public partial class Lab1Context : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        //base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Category>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("categories_pkey");

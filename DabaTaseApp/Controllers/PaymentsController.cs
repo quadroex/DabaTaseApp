@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DabaTaseApp.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DabaTaseApp.Controllers
 {
+    // [Authorize(Roles = "admin")]
     public class PaymentsController : Controller
     {
         private readonly Lab1Context _context;

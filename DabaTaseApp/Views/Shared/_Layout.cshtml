@@ -3,42 +3,53 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Автошкола CRM</title>
+    <title>@ViewData["Title"] - DriveForce</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    }
+
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background: #1e1b4b; padding: 1rem 0;">
-            <div class="container">
-                <a class="navbar-brand d-flex align-items-center fw-bold" asp-controller="Home" asp-action="Index">
-                    <div class="bg-primary rounded-3 p-2 me-2">
-                        <i class="bi bi-shield-shaded text-white"></i>
+        <nav class="navbar navbar-expand-lg sticky-top">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                    <div class="bg-white rounded p-1 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-shield-check text-primary fs-5"></i>
                     </div>
-                    <span>DabaTase CRM</span>
+                    DriveForce
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <i class="bi bi-list text-white fs-2"></i>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+                    <ul class="navbar-nav mb-2 mb-lg-0 gap-1">
                         <li class="nav-item">
-                            <a class="nav-link px-3" asp-controller="Students" asp-action="Index">Учні</a>
+                            <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">Учні</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link px-3" asp-controller="Instructors" asp-action="Index">Інструктори</a>
+                            <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">Інструктори</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link px-3" asp-controller="PracticeSessions" asp-action="Index">Практика</a>
+                            <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">Групи</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link px-3" asp-controller="Vehicles" asp-action="Index">Автопарк</a>
+                            <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">Автопарк</a>
                         </li>
-                        <li class="nav-item ms-lg-3">
-                            <a class="btn btn-primary" asp-controller="Payments" asp-action="Index">
-                                <i class="bi bi-credit-card me-2"></i>Фінанси
-                            </a>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "TheorySessions" ? "active" : "")" asp-controller="TheorySessions" asp-action="Index">Теорія</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "PracticeSessions" ? "active" : "")" asp-controller="PracticeSessions" asp-action="Index">Практика</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="Index">Фінанси</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">Категорії</a>
                         </li>
                     </ul>
                 </div>
@@ -46,15 +57,34 @@
         </nav>
     </header>
 
-    <div class="container my-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <div class="page-header">
+        <div class="container-fluid px-5">
+            <div class="breadcrumb-custom">
+                <i class="bi bi-house-door"></i>
+                <span>/</span>
+                <span>DriveForce CRM</span>
+                <span>/</span>
+                <span class="text-primary fw-medium">@ViewData["Title"]</span>
+            </div>
+            <h2 class="fw-bold m-0">@ViewData["Title"]</h2>
+        </div>
     </div>
 
-    <footer class="text-center py-4 text-muted">
-        <div class="container">
-            <small>&copy; 2026 — Професійна система керування автошколою</small>
+    <div class="container-fluid main-content px-5 flex-grow-1">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xxl-11">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-top footer text-muted bg-white py-4 mt-auto">
+        <div class="container text-center">
+            <span class="fw-medium text-dark">&copy; 2026 — DriveForce</span>
+            <br />
+            <small>Професійна екосистема керування автошколою</small>
         </div>
     </footer>
 

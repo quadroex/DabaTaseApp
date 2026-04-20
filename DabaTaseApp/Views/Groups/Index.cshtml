@@ -1,61 +1,69 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.Group>
-
 @{
-    
+    ViewData["Title"] = "Групи";
 }
 
-<!DOCTYPE html>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Навчальні групи</h1>
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-2"></i>Створити групу</a>
+        <a asp-action="Export" class="btn btn-success shadow-sm"><i class="bi bi-file-earmark-excel me-2"></i>Експорт розкладу</a>
+    </div>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Index</title>
-</head>
-<body>
-<p>
-    <a asp-action="Create">Створити</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.GroupName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StartDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.EndDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TheoryInstructor)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.GroupName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StartDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EndDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TheoryInstructor.FullName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
-</body>
-</html>
+<div class="card-custom mb-4 py-3 bg-light border-0">
+    <form asp-action="Import" enctype="multipart/form-data" method="post" class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-cloud-arrow-up fs-3 text-muted"></i>
+            <div>
+                <strong class="d-block">Імпорт груп</strong>
+                <small class="text-muted">Оберіть файл .xlsx для імпорту</small>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="file" name="fileExcel" class="form-control" accept=".xlsx" required />
+            <button type="submit" class="btn btn-warning shadow-sm">Завантажити</button>
+        </div>
+    </form>
+</div>
+
+<div class="card-custom">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Назва групи</th>
+                <th>Початок навчання</th>
+                <th>Кінець навчання</th>
+                <th>Інструктор теорії</th>
+                <th class="text-end">Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="fw-bold text-primary">@item.GroupName</td>
+                    <td>@item.StartDate.ToShortDateString()</td>
+                    <td>@item.EndDate.ToShortDateString()</td>
+                    <td>@(item.TheoryInstructor?.FullName ?? "Не призначено")</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="ExportSingle" asp-route-id="@item.Id" class="btn-action" title="Експорт звіту">
+                                <i class="bi bi-file-earmark-excel text-success"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" title="Редагувати">
+                                <i class="bi bi-pencil-square text-primary"></i>
+                            </a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" title="Деталі групи">
+                                <i class="bi bi-info-circle text-info"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action" title="Видалити">
+                                <i class="bi bi-trash3 text-danger"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
