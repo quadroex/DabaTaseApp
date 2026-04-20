@@ -65,6 +65,7 @@ namespace DabaTaseApp.Controllers
                 ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName");
             }
 
+            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
             return View();
         }
 
@@ -86,6 +87,7 @@ namespace DabaTaseApp.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
+            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
             return View(student);
         }
 
@@ -98,6 +100,7 @@ namespace DabaTaseApp.Controllers
             if (student == null) return NotFound();
 
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
+            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
             return View(student);
         }
 
@@ -126,6 +129,7 @@ namespace DabaTaseApp.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
+            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
             return View(student);
         }
 
@@ -156,10 +160,17 @@ namespace DabaTaseApp.Controllers
             var student = await _context.Students.FindAsync(id);
             if (student != null)
             {
-                _context.Students.Remove(student);
+                try
+                {
+                    _context.Students.Remove(student);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["ErrorMessage"] = "Неможливо видалити учня, оскільки у нього є платежі або практичні заняття.";
+                    return RedirectToAction(nameof(Delete), new { id = id });
+                }
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

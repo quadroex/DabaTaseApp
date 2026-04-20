@@ -27,7 +27,9 @@
             </div>
             <div class="mb-3">
                 <label asp-for="GroupId" class="control-label"></label>
-                <select asp-for="GroupId" class="form-control" asp-items="ViewBag.GroupId"></select>
+                <select asp-for="GroupId" class="form-control" asp-items="ViewBag.GroupId">
+                    <option value="">Без групи</option>
+                </select>
                 <span asp-validation-for="GroupId" class="text-danger"></span>
             </div>
             <div class="mb-3">
@@ -37,7 +39,7 @@
             </div>
             <div class="mb-3">
                 <label asp-for="TargetCategory" class="control-label"></label>
-                <input asp-for="TargetCategory" class="form-control" />
+                <select asp-for="TargetCategory" class="form-control" asp-items="ViewBag.TargetCategory"></select>
                 <span asp-validation-for="TargetCategory" class="text-danger"></span>
             </div>
             <div class="mb-3">

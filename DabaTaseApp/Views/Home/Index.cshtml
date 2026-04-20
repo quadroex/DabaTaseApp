@@ -1,8 +1,67 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Головна сторінка";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mb-5">
+    <h1 class="display-4">Головна сторінка</h1>
+    <p>Статистика та показники</p>
 </div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div id="studentsByCategoryChart" style="width: 100%; height: 400px;"></div>
+    </div>
+    <div class="col-md-6">
+        <div id="sessionsByInstructorChart" style="width: 100%; height: 400px;"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+        fetch('/api/charts/studentsByCategory')
+        .then(response => response.json())
+        .then(data => {
+        const dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('string', 'Категорія');
+        dataTable.addColumn('number', 'Кількість учнів');
+                    
+        data.forEach(item => {
+        dataTable.addRow([item.category, item.count]);
+        });
+
+        const options = {
+        title: 'Розподіл учнів за категоріями',
+        pieHole: 0.4
+        };
+
+        const chart = new google.visualization.PieChart(document.getElementById('studentsByCategoryChart'));
+        chart.draw(dataTable, options);
+        });
+
+        fetch('/api/charts/sessionsByInstructor')
+        .then(response => response.json())
+        .then(data => {
+        const dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('string', 'Інструктор');
+        dataTable.addColumn('number', 'Кількість занять');
+                    
+        data.forEach(item => {
+        dataTable.addRow([item.instructor, item.count]);
+        });
+
+        const options = {
+        title: 'Кількість практичних занять по інструкторах',
+        legend: { position: 'none' }
+        };
+
+        const chart = new google.visualization.ColumnChart(document.getElementById('sessionsByInstructorChart'));
+        chart.draw(dataTable, options);
+        });
+        }
+    </script>
+}

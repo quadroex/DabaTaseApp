@@ -159,10 +159,17 @@ namespace DabaTaseApp.Controllers
             var @group = await _context.Groups.FindAsync(id);
             if (@group != null)
             {
-                _context.Groups.Remove(@group);
+                try
+                {
+                    _context.Groups.Remove(@group);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["ErrorMessage"] = "Неможливо видалити групу, оскільки до неї прив'язані учні або заняття. Спочатку видаліть їх.";
+                    return RedirectToAction(nameof(Delete), new { id = id });
+                }
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

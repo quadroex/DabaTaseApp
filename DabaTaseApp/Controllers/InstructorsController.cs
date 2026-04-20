@@ -141,10 +141,17 @@ namespace DabaTaseApp.Controllers
             var instructor = await _context.Instructors.FindAsync(id);
             if (instructor != null)
             {
-                _context.Instructors.Remove(instructor);
+                try
+                {
+                    _context.Instructors.Remove(instructor);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["ErrorMessage"] = "Неможливо видалити інструктора, оскільки за ним закріплені групи або заняття.";
+                    return RedirectToAction(nameof(Delete), new { id = id });
+                }
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

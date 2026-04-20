@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DabaTaseApp.Models;
 
@@ -7,6 +9,7 @@ public partial class Student
     public int Id { get; set; }
 
     [Display(Name = "ПІБ")]
+    [Required(ErrorMessage = "Поле не повинно бути порожнім")]
     public string FullName { get; set; } = null!;
 
     [Display(Name = "Баланс")]
@@ -16,10 +19,10 @@ public partial class Student
     public string TargetCategory { get; set; } = null!;
 
     [Display(Name = "Група")]
-    public int GroupId { get; set; }
+    public int? GroupId { get; set; }
 
     [Display(Name = "Група")]
-    public virtual Group Group { get; set; } = null!;
+    public virtual Group? Group { get; set; }
 
     [Display(Name = "Платежі")]
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
