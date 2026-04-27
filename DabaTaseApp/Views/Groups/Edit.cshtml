@@ -9,11 +9,11 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Edit</title>
+    <title>Редагувати</title>
 </head>
 <body>
 
-<h4>Group</h4>
+<h4>Групи</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -41,14 +41,14 @@
                 <span asp-validation-for="EndDate" class="text-danger"></span>
             </div>
             <div class="mb-3">
-                <input type="submit" value="Save" class="btn btn-primary" />
+                <input type="submit" value="Зберегти" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
 </div>
 
 @section Scripts {

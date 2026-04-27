@@ -13,7 +13,7 @@
 <div class="card-custom mb-4" style="max-width: 600px;">
     <h5 class="fw-bold mb-4 text-muted border-bottom pb-2">Інформація про платіж</h5>
     <dl class="row mb-0">
-        <dt class="col-sm-4 text-muted mb-3">Платник (Учень)</dt>
+        <dt class="col-sm-4 text-muted mb-3">Платник</dt>
         <dd class="col-sm-8 mb-3 fw-bold">@(Model.Student?.FullName ?? "Невідомо")</dd>
 
         <dt class="col-sm-4 text-muted mb-3">Дата та час</dt>
@@ -25,5 +25,5 @@
 </div>
 
 <div>
-    <a asp-action="Index" class="btn btn-link text-muted"><i class="bi bi-arrow-left me-2"></i>До списку платежів</a>
+    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
 </div>

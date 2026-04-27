@@ -147,45 +147,229 @@ namespace DabaTaseApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(IFormFile fileExcel)
+        {
+            if (fileExcel == null || fileExcel.Length == 0)
+            {
+                TempData["Error"] = "Будь ласка, оберіть файл для імпорту.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var log = new StringBuilder();
+            log.AppendLine($"Лог імпорту навчальних груп від {DateTime.Now:dd.MM.yyyy HH:mm:ss}.");
+            log.AppendLine($"Файл: {fileExcel.FileName}\n");
+
+            int success = 0, errors = 0, warnings = 0;
+
+            var existingGroups = await _context.Groups.Select(g => g.GroupName).ToListAsync();
+            var processedInThisFile = new HashSet<string>();
+
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await fileExcel.CopyToAsync(stream);
+                    using (var workbook = new XLWorkbook(stream))
+                    {
+                        var worksheet = workbook.Worksheet(1);
+                        var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
+
+                        int rowIndex = 1;
+
+                        foreach (var row in rows)
+                        {
+                            rowIndex++;
+
+                            var gName = row.Cell(1).GetValue<string>()?.Trim();
+                            var sDateStr = row.Cell(2).GetValue<string>()?.Trim();
+                            var eDateStr = row.Cell(3).GetValue<string>()?.Trim();
+                            var instName = row.Cell(4).GetValue<string>()?.Trim();
+
+                            if (string.IsNullOrWhiteSpace(gName))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Назва групи порожня.");
+                                errors++; continue;
+                            }
+
+                            if (existingGroups.Contains(gName))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Група з назвою '{gName}' вже існує.");
+                                errors++; continue;
+                            }
+
+                            if (processedInThisFile.Contains(gName))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Група '{gName}' дублюється в цьому ж файлі.");
+                                errors++; continue;
+                            }
+
+                            if (!DateTime.TryParse(sDateStr, out DateTime sDate) || !DateTime.TryParse(eDateStr, out DateTime eDate))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Група '{gName}' має невірний формат дати.");
+                                errors++; continue;
+                            }
+
+                            if (eDate < sDate)
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Група '{gName}' - дата закінчення ({eDate:dd.MM}) раніше дати початку ({sDate:dd.MM}).");
+                                errors++; continue;
+                            }
+
+                            int? instructorId = null;
+                            if (!string.IsNullOrWhiteSpace(instName))
+                            {
+                                var instructor = await _context.Instructors.FirstOrDefaultAsync(i => i.FullName == instName);
+                                if (instructor != null)
+                                {
+                                    instructorId = instructor.Id;
+                                }
+                                else
+                                {
+                                    log.AppendLine($"[ПОПЕРЕДЖЕННЯ] Рядок {rowIndex}: Група '{gName}' - Інструктора '{instName}' не знайдено. Групу створено без викладача.");
+                                    warnings++;
+                                }
+                            }
+
+                            var newGroup = new Group
+                            {
+                                GroupName = gName,
+                                StartDate = DateOnly.FromDateTime(sDate),
+                                EndDate = DateOnly.FromDateTime(eDate),
+                                TheoryInstructorId = instructorId
+                            };
+
+                            _context.Groups.Add(newGroup);
+                            processedInThisFile.Add(gName);
+                            existingGroups.Add(gName);
+
+                            log.AppendLine($"[УСПІХ] Рядок {rowIndex}: Групу '{gName}' успішно збережено.");
+                            success++;
+                        }
+
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.AppendLine($"\n[ЗБІЙ] Помилка обробки файлу: {ex.Message}, щось пішло не так. :(");
+                errors++;
+            }
+
+            log.AppendLine($"\nПІДСУМОК");
+            log.AppendLine($"Успішно: {success}");
+            log.AppendLine($"Пропущено: {errors}");
+            log.AppendLine($"Попереджень: {warnings}");
+
+            if (errors > 0 || warnings > 0)
+            {
+                return File(Encoding.UTF8.GetBytes(log.ToString()), "text/plain", $"Groups_Import_Report_{DateTime.Now:yyyyMMdd_HHmm}.txt");
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ImportStudents(int groupId, IFormFile fileExcel)
         {
             if (fileExcel == null || fileExcel.Length == 0) return RedirectToAction(nameof(Details), new { id = groupId });
 
+            var group = await _context.Groups.FindAsync(groupId);
+            string groupDisplayName = group?.GroupName ?? groupId.ToString();
+
+            var log = new StringBuilder();
+            log.AppendLine($"Лог імпорту учнів у групу {groupDisplayName} від {DateTime.Now:dd.MM.yyyy HH:mm:ss}.");
+            log.AppendLine($"Файл: {fileExcel.FileName}\n");
+
+            int success = 0, errors = 0;
+
             var validCategories = await _context.Categories.Select(c => c.Name).ToListAsync();
-            var defaultCategory = validCategories.Contains("B") ? "B" : validCategories.FirstOrDefault();
+            var existingStudentsInGroup = await _context.Students
+                .Where(s => s.GroupId == groupId)
+                .Select(s => s.FullName)
+                .ToListAsync();
 
-            using (var stream = new MemoryStream())
+            var processedInThisFile = new HashSet<string>();
+
+            try
             {
-                await fileExcel.CopyToAsync(stream);
-                using (var workbook = new XLWorkbook(stream))
+                using (var stream = new MemoryStream())
                 {
-                    var worksheet = workbook.Worksheet(1);
-                    var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
-
-                    foreach (var row in rows)
+                    await fileExcel.CopyToAsync(stream);
+                    using (var workbook = new XLWorkbook(stream))
                     {
-                        var name = row.Cell(1).GetValue<string>();
-                        var category = row.Cell(2).GetValue<string>();
+                        var worksheet = workbook.Worksheet(1);
+                        var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
 
-                        if (string.IsNullOrWhiteSpace(name)) continue;
+                        int rowIndex = 1;
 
-                        if (string.IsNullOrWhiteSpace(category) || !validCategories.Contains(category))
+                        foreach (var row in rows)
                         {
-                            category = defaultCategory;
+                            rowIndex++;
+
+                            var name = row.Cell(1).GetValue<string>()?.Trim();
+                            var category = row.Cell(2).GetValue<string>()?.Trim();
+
+                            if (string.IsNullOrWhiteSpace(name))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: ім'я учня порожнє.");
+                                errors++; continue;
+                            }
+
+                            if (existingStudentsInGroup.Contains(name))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Учень '{name}' вже існує в цій групі.");
+                                errors++; continue;
+                            }
+
+                            if (processedInThisFile.Contains(name))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Учень '{name}' дублюється в цьому файлі.");
+                                errors++; continue;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(category) || !validCategories.Contains(category))
+                            {
+                                log.AppendLine($"[ПОМИЛКА] Рядок {rowIndex}: Категорія '{category}' недійсна або порожня.");
+                                errors++; continue;
+                            }
+
+                            var student = new Student
+                            {
+                                FullName = name,
+                                TargetCategory = category,
+                                GroupId = groupId,
+                                Balance = 0
+                            };
+
+                            _context.Students.Add(student);
+                            processedInThisFile.Add(name);
+                            existingStudentsInGroup.Add(name);
+
+                            log.AppendLine($"[УСПІХ] Рядок {rowIndex}: Учня '{name}' ({category}) збережено.");
+                            success++;
                         }
 
-                        var student = new Student
-                        {
-                            FullName = name,
-                            TargetCategory = category,
-                            GroupId = groupId,
-                            Balance = 0
-                        };
-                        _context.Students.Add(student);
+                        await _context.SaveChangesAsync();
                     }
-                    await _context.SaveChangesAsync();
                 }
             }
+            catch (Exception ex)
+            {
+                log.AppendLine($"\n[ЗБІЙ] Помилка обробки файлу: {ex.Message}, щось пішло не так. :(");
+                errors++;
+            }
+
+            log.AppendLine($"\nПІДСУМОК");
+            log.AppendLine($"Успішно: {success}");
+            log.AppendLine($"Пропущено: {errors}");
+
+            if (errors > 0)
+            {
+                return File(Encoding.UTF8.GetBytes(log.ToString()), "text/plain", $"Students_Import_Report_{DateTime.Now:yyyyMMdd_HHmm}.txt");
+            }
+
             return RedirectToAction(nameof(Details), new { id = groupId });
         }
 

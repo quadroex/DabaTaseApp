@@ -9,21 +9,21 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Delete</title>
+    <title>Видалити</title>
 </head>
 <body>
 
-<h3>Ви впевнені що хочете видалити це?</h3>
+<h3>Ви впевнені, що хочете видалити це?</h3>
 <div>
-    <h4>Category</h4>
+    <h4>Категорії</h4>
     <hr />
     <dl class="row">
     </dl>
     
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
+        <input type="submit" value="Видалити" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
     </form>
 </div>
 </body>
