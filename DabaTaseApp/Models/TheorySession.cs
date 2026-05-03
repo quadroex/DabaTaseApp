@@ -19,6 +19,8 @@ public partial class TheorySession : IValidatableObject
     public int GroupId { get; set; }
 
     [Display(Name = "Аудиторія")]
+    [Required(ErrorMessage = "Поле не повинно бути порожнім")]
+    [StringLength(120, ErrorMessage = "Аудиторія надто довга.")]
     public string Location { get; set; } = null!;
 
     [Display(Name = "Час закінчення")]

@@ -1,0 +1,178 @@
+@model DabaTaseApp.Models.ViewModels.UsersIndexViewModel
+
+@{
+    ViewData["Title"] = "Доступи";
+}
+
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Адміністрування</p>
+        <h1 class="mb-0">Користувачі та ролі</h1>
+        <p class="text-muted mb-0">Акаунти, профілі учнів/інструкторів і права доступу.</p>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="card-custom">
+    <h5 class="mb-3">Створити користувача</h5>
+    <form asp-action="Create" method="post" class="row g-3" id="createUserForm">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="col-12 col-lg-3">
+            <label asp-for="NewUser.Email" class="form-label">Email</label>
+            <input asp-for="NewUser.Email" class="form-control" autocomplete="off" />
+            <span asp-validation-for="NewUser.Email" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-2">
+            <label asp-for="NewUser.Role" class="form-label">Роль</label>
+            <select asp-for="NewUser.Role" class="form-select" id="newUserRole">
+                @foreach (var role in Model.AvailableRoles)
+                {
+                    <option value="@role">@role</option>
+                }
+            </select>
+            <span asp-validation-for="NewUser.Role" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <label asp-for="NewUser.Password" class="form-label">Пароль</label>
+            <input asp-for="NewUser.Password" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="NewUser.Password" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <label asp-for="NewUser.ConfirmPassword" class="form-label">Підтвердження</label>
+            <input asp-for="NewUser.ConfirmPassword" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="NewUser.ConfirmPassword" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4 profile-field student-field instructor-field">
+            <label asp-for="NewUser.FullName" class="form-label">ПІБ</label>
+            <input asp-for="NewUser.FullName" class="form-control" />
+            <span asp-validation-for="NewUser.FullName" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3 profile-field student-field">
+            <label asp-for="NewUser.TargetCategory" class="form-label">Категорія</label>
+            <select asp-for="NewUser.TargetCategory" asp-items="Model.CategoryOptions" class="form-select"></select>
+            <span asp-validation-for="NewUser.TargetCategory" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3 profile-field instructor-field">
+            <label asp-for="NewUser.PhoneNumber" class="form-label">Телефон</label>
+            <input asp-for="NewUser.PhoneNumber" class="form-control" />
+            <span asp-validation-for="NewUser.PhoneNumber" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3 profile-field instructor-field">
+            <label asp-for="NewUser.LicenseSerial" class="form-label">Ліцензія</label>
+            <input asp-for="NewUser.LicenseSerial" class="form-control text-uppercase" />
+            <span asp-validation-for="NewUser.LicenseSerial" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-person-plus me-1"></i>Створити
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card-custom">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Користувач</th>
+                    <th>Поточна роль</th>
+                    <th>Профіль</th>
+                    <th class="text-end">Змінити доступ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold">@user.Email</div>
+                            <div class="small text-muted">@user.Id</div>
+                        </td>
+                        <td>
+                            @if (user.Roles.Count == 0)
+                            {
+                                <span class="text-muted">Без ролі</span>
+                            }
+                            @foreach (var role in user.Roles)
+                            {
+                                <span class="role-chip role-chip-@role">@role</span>
+                            }
+                        </td>
+                        <td class="text-muted small">@user.ProfileStatus</td>
+                        <td>
+                            @if (user.CanChangeRole)
+                            {
+                                <form asp-action="UpdateRole" method="post" class="d-flex justify-content-end gap-2">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <select name="role" class="form-select form-select-sm role-select">
+                                        @foreach (var role in Model.AvailableRoles)
+                                        {
+                                            if (role == user.SelectedRole)
+                                            {
+                                                <option value="@role" selected>@role</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@role">@role</option>
+                                            }
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-shield-lock me-1"></i>Зберегти
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="text-end text-muted small">Адміністратора не можна змінити</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        const roleSelect = document.getElementById('newUserRole');
+        const profileFields = document.querySelectorAll('.profile-field');
+        const studentFields = document.querySelectorAll('.student-field');
+        const instructorFields = document.querySelectorAll('.instructor-field');
+
+        function setVisible(fields, visible) {
+            fields.forEach(field => field.classList.toggle('d-none', !visible));
+        }
+
+        function syncProfileFields() {
+            const role = roleSelect.value;
+            setVisible(profileFields, false);
+            setVisible(studentFields, role === 'student');
+            setVisible(instructorFields, role === 'instructor');
+        }
+
+        roleSelect.addEventListener('change', syncProfileFields);
+        syncProfileFields();
+    </script>
+}

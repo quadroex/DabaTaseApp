@@ -9,6 +9,8 @@ public partial class Group : IValidatableObject
     public int Id { get; set; }
 
     [Display(Name = "Назва групи")]
+    [Required(ErrorMessage = "Поле не повинно бути порожнім")]
+    [StringLength(80, MinimumLength = 2, ErrorMessage = "Назва групи має містити від 2 до 80 символів.")]
     public string GroupName { get; set; } = null!;
 
     [Display(Name = "Дата початку")]

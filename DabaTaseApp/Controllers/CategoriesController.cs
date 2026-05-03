@@ -11,7 +11,7 @@ using DabaTaseApp.Models;
 
 namespace DabaTaseApp.Controllers
 {
-    [Authorize(Roles = "admin")]
+    [Authorize(Roles = DabaTaseApp.Security.AppRoles.Admin)]
     public class CategoriesController : Controller
     {
         private readonly Lab1Context _context;
@@ -45,6 +45,8 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description")] Category category)
         {
+            await ValidateCategoryAsync(category);
+
             if (ModelState.IsValid)
             {
                 _context.Add(category);
@@ -68,6 +70,8 @@ namespace DabaTaseApp.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description")] Category category)
         {
             if (id != category.Id) return NotFound();
+
+            await ValidateCategoryAsync(category);
 
             if (ModelState.IsValid)
             {
@@ -208,6 +212,17 @@ namespace DabaTaseApp.Controllers
         private bool CategoryExists(int id)
         {
             return _context.Categories.Any(e => e.Id == id);
+        }
+
+        private async Task ValidateCategoryAsync(Category category)
+        {
+            category.Name = (category.Name ?? string.Empty).Trim().ToUpperInvariant();
+            category.Description = category.Description?.Trim();
+
+            if (await _context.Categories.AnyAsync(c => c.Id != category.Id && c.Name == category.Name))
+            {
+                ModelState.AddModelError(nameof(Category.Name), "Категорія з такою назвою вже існує.");
+            }
         }
     }
 }

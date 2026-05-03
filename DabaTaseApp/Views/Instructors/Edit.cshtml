@@ -8,8 +8,17 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card-custom">
-            <form asp-action="Edit">
+            <form asp-action="Edit" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="Id" />
+
+                <div class="form-group mb-4">
+                    <label asp-for="ApplicationUserId" class="form-label text-muted fw-bold">Акаунт</label>
+                    <select asp-for="ApplicationUserId" class="form-select" asp-items="ViewBag.ApplicationUserId">
+                        <option value="">Не прив'язано</option>
+                    </select>
+                    <span asp-validation-for="ApplicationUserId" class="text-danger small"></span>
+                </div>
                 
                 <div class="form-group mb-4">
                     <label asp-for="FullName" class="form-label text-muted fw-bold">ПІБ Інструктора</label>

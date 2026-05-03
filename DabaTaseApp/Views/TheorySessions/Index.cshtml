@@ -1,57 +1,82 @@
-﻿@model IEnumerable<DabaTaseApp.Models.TheorySession>
+@model IEnumerable<DabaTaseApp.Models.TheorySession>
+
 @{
     ViewData["Title"] = "Теоретичні заняття";
+    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="surface-toolbar">
     <div>
+        <p class="eyebrow mb-2">Теорія</p>
         <h1 class="mb-0">Заняття з теорії</h1>
-        <p class="text-muted mb-0">Розклад лекційних та аудиторних занять</p>
+        <p class="text-muted mb-0">Лекційний розклад із актуальними статусами.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-2"></i>Нове заняття</a>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Нове заняття</a>
+    }
 </div>
 
 <div class="card-custom">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Час проведення</th>
-                <th>Група</th>
-                <th>Аудиторія</th>
-                <th>Статус</th>
-                <th class="text-end">Дії</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                var statusClass = item.Status switch
-                {
-                    "Заплановано" => "status-planned",
-                    "Триває" => "status-ongoing",
-                    "Завершено" => "status-done",
-                    _ => "status-cancelled"
-                };
-                <tr>
-                    <td>
-                        <div class="fw-bold">@item.StartTime.ToString("dd.MM.yyyy")</div>
-                        <div class="small text-muted">@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</div>
-                    </td>
-                    <td>
-                        <div class="fw-bold text-primary">@item.Group?.GroupName</div>
-                        <div class="small text-muted"><i class="bi bi-person me-1"></i>@item.Instructor?.FullName</div>
-                    </td>
-                    <td><span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.Location</span></td>
-                    <td><span class="status-badge @statusClass">@item.Status</span></td>
-                    <td class="text-end">
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-pencil-square text-primary"></i></a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-info-circle text-info"></i></a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-trash3 text-danger"></i></a>
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-journal-text"></i>
+            <h5>Теоретичних занять не знайдено</h5>
+            <p>Розклад групи з'явиться після планування занять.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Час проведення</th>
+                        <th>Група</th>
+                        <th>Аудиторія</th>
+                        <th>Статус</th>
+                        <th class="text-end">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var statusClass = item.Status switch
+                        {
+                            "Заплановано" => "status-planned",
+                            "Триває" => "status-ongoing",
+                            "Завершено" => "status-done",
+                            _ => "status-cancelled"
+                        };
+                        <tr>
+                            <td>
+                                <div class="fw-bold">@item.StartTime.ToString("dd.MM.yyyy")</div>
+                                <div class="small text-muted">@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@item.Group?.GroupName</div>
+                                <div class="small text-muted">@item.Instructor?.FullName</div>
+                            </td>
+                            <td><span class="status-badge status-planned">@item.Location</span></td>
+                            <td><span class="status-badge @statusClass">@item.Status</span></td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    @if (canManage)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
+                                    @if (canManage)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action text-danger" aria-label="Видалити"><i class="bi bi-trash3"></i></a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>

@@ -1,41 +1,49 @@
-﻿using DabaTaseApp.Models;
+using DabaTaseApp.Models;
+using DabaTaseApp.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace DabaTaseApp.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = AppRoles.AllAuthenticated)]
     public class StudentsController : Controller
     {
         private readonly Lab1Context _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public StudentsController(Lab1Context context)
+        public StudentsController(Lab1Context context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: Students
         public async Task<IActionResult> Index()
         {
-            if (User.IsInRole("student"))
+            if (User.IsInRole(AppRoles.Student))
             {
-                var student = await _context.Students
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ownStudent = await _context.Students
                     .Include(s => s.Group)
-                    .Where(s => s.FullName == User.Identity.Name)
+                    .Include(s => s.ApplicationUser)
+                    .Where(s => s.ApplicationUserId == userId)
                     .ToListAsync();
-                return View(student);
+
+                return View(ownStudent);
             }
 
-            return View(await _context.Students.Include(s => s.Group).ToListAsync());
+            var students = await _context.Students
+                .Include(s => s.Group)
+                .Include(s => s.ApplicationUser)
+                .OrderBy(s => s.FullName)
+                .ToListAsync();
+
+            return View(students);
         }
 
-        // GET: Students/Details
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -45,41 +53,36 @@ namespace DabaTaseApp.Controllers
 
             var student = await _context.Students
                 .Include(s => s.Group)
+                .Include(s => s.ApplicationUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (student == null)
             {
                 return NotFound();
             }
 
+            if (User.IsInRole(AppRoles.Student) && !CurrentUserOwns(student))
+            {
+                return Forbid();
+            }
+
             return View(student);
         }
 
-        // GET: Students/Create
-        public IActionResult Create(int? categoryId)
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        public async Task<IActionResult> Create(int? categoryId)
         {
-            if (categoryId != null)
-            {
-                ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", categoryId);
-            }
-            else
-            {
-                ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName");
-            }
-
-            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
+            await PopulateStudentFormAsync(new Student { GroupId = categoryId });
             return View();
         }
 
-        // POST: Students/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
+        public async Task<IActionResult> Create([Bind("Id,ApplicationUserId,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
-            ModelState.Remove("Group");
-            ModelState.Remove("Payments");
-            ModelState.Remove("PracticeSessions");
+            await ValidateStudentAsync(student);
+            RemoveNavigationModelState();
 
             if (ModelState.IsValid)
             {
@@ -87,33 +90,41 @@ namespace DabaTaseApp.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
-            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
+
+            await PopulateStudentFormAsync(student);
             return View(student);
         }
 
-        // GET: Students/Edit
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+            {
+                return NotFound();
+            }
 
             var student = await _context.Students.FindAsync(id);
-            if (student == null) return NotFound();
+            if (student == null)
+            {
+                return NotFound();
+            }
 
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
-            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
+            await PopulateStudentFormAsync(student);
             return View(student);
         }
 
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Balance,TargetCategory,GroupId")] Student student)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,ApplicationUserId,FullName,Balance,TargetCategory,GroupId")] Student student)
         {
-            if (id != student.Id) return NotFound();
+            if (id != student.Id)
+            {
+                return NotFound();
+            }
 
-            ModelState.Remove("Group");
-            ModelState.Remove("Payments");
-            ModelState.Remove("PracticeSessions");
+            await ValidateStudentAsync(student);
+            RemoveNavigationModelState();
 
             if (ModelState.IsValid)
             {
@@ -124,17 +135,22 @@ namespace DabaTaseApp.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Students.Any(e => e.Id == student.Id)) return NotFound();
-                    else throw;
+                    if (!StudentExists(student.Id))
+                    {
+                        return NotFound();
+                    }
+
+                    throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName", student.GroupId);
-            ViewData["TargetCategory"] = new SelectList(_context.Categories, "Name", "Name");
+
+            await PopulateStudentFormAsync(student);
             return View(student);
         }
 
-        // GET: Students/Delete
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -144,7 +160,9 @@ namespace DabaTaseApp.Controllers
 
             var student = await _context.Students
                 .Include(s => s.Group)
+                .Include(s => s.ApplicationUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (student == null)
             {
                 return NotFound();
@@ -153,7 +171,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        // POST: Students/Delete
+        [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -169,15 +187,111 @@ namespace DabaTaseApp.Controllers
                 catch (DbUpdateException)
                 {
                     TempData["ErrorMessage"] = "Неможливо видалити учня, оскільки у нього є платежі або практичні заняття.";
-                    return RedirectToAction(nameof(Delete), new { id = id });
+                    return RedirectToAction(nameof(Delete), new { id });
                 }
             }
+
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool CurrentUserOwns(Student student)
+        {
+            return student.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
         private bool StudentExists(int id)
         {
             return _context.Students.Any(e => e.Id == id);
+        }
+
+        private void RemoveNavigationModelState()
+        {
+            ModelState.Remove(nameof(Student.ApplicationUser));
+            ModelState.Remove(nameof(Student.Group));
+            ModelState.Remove(nameof(Student.Payments));
+            ModelState.Remove(nameof(Student.PracticeSessions));
+        }
+
+        private async Task PopulateStudentFormAsync(Student student)
+        {
+            ViewData["GroupId"] = new SelectList(
+                await _context.Groups.OrderBy(g => g.GroupName).ToListAsync(),
+                "Id",
+                "GroupName",
+                student.GroupId);
+
+            ViewData["TargetCategory"] = new SelectList(
+                await _context.Categories.OrderBy(c => c.Name).ToListAsync(),
+                "Name",
+                "Name",
+                student.TargetCategory);
+
+            var studentUsers = await _userManager.GetUsersInRoleAsync(AppRoles.Student);
+            var linkedUserIds = await _context.Students
+                .Where(s => s.Id != student.Id && s.ApplicationUserId != null)
+                .Select(s => s.ApplicationUserId!)
+                .ToListAsync();
+
+            var availableUsers = studentUsers
+                .Where(u => !linkedUserIds.Contains(u.Id) || u.Id == student.ApplicationUserId)
+                .OrderBy(u => u.Email)
+                .ToList();
+
+            ViewData["ApplicationUserId"] = new SelectList(availableUsers, "Id", "Email", student.ApplicationUserId);
+        }
+
+        private async Task ValidateStudentAsync(Student student)
+        {
+            student.FullName = (student.FullName ?? string.Empty).Trim();
+
+            if (!await _context.Categories.AnyAsync(c => c.Name == student.TargetCategory))
+            {
+                ModelState.AddModelError(nameof(Student.TargetCategory), "Оберіть існуючу категорію.");
+            }
+
+            if (student.GroupId.HasValue && !await _context.Groups.AnyAsync(g => g.Id == student.GroupId.Value))
+            {
+                ModelState.AddModelError(nameof(Student.GroupId), "Обрана група не існує.");
+            }
+
+            if (await _context.Students.AnyAsync(s => s.Id != student.Id && s.FullName == student.FullName))
+            {
+                ModelState.AddModelError(nameof(Student.FullName), "Учень із таким ПІБ уже існує.");
+            }
+
+            await ValidateApplicationUserLinkAsync(student);
+        }
+
+        private async Task ValidateApplicationUserLinkAsync(Student student)
+        {
+            if (string.IsNullOrWhiteSpace(student.ApplicationUserId))
+            {
+                student.ApplicationUserId = null;
+                return;
+            }
+
+            var user = await _userManager.FindByIdAsync(student.ApplicationUserId);
+            if (user == null)
+            {
+                ModelState.AddModelError(nameof(Student.ApplicationUserId), "Обраний акаунт не існує.");
+                return;
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, AppRoles.Student))
+            {
+                ModelState.AddModelError(nameof(Student.ApplicationUserId), "До картки учня можна прив'язати тільки акаунт із роллю student.");
+                return;
+            }
+
+            var alreadyLinked = await _context.Students
+                .AnyAsync(s => s.Id != student.Id && s.ApplicationUserId == student.ApplicationUserId);
+
+            if (alreadyLinked)
+            {
+                ModelState.AddModelError(
+                    nameof(Student.ApplicationUserId),
+                    "Цей акаунт уже прив'язаний до іншого учня.");
+            }
         }
     }
 }

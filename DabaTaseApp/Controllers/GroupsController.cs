@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using DabaTaseApp.Models;
+using DabaTaseApp.Security;
 using ClosedXML.Excel;
 using System.Text;
 
 namespace DabaTaseApp.Controllers
 {
-    [Authorize(Roles = "admin,instructor")]
+    [Authorize(Roles = AppRoles.AdminOrInstructor)]
     public class GroupsController : Controller
     {
         private readonly Lab1Context _context;
@@ -385,6 +386,8 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,GroupName,StartDate,EndDate,TheoryInstructorId")] Group @group)
         {
+            await ValidateGroupAsync(@group);
+
             if (ModelState.IsValid)
             {
                 _context.Add(@group);
@@ -409,6 +412,9 @@ namespace DabaTaseApp.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Id,GroupName,StartDate,EndDate,TheoryInstructorId")] Group @group)
         {
             if (id != @group.Id) return NotFound();
+
+            await ValidateGroupAsync(@group);
+
             if (ModelState.IsValid)
             {
                 _context.Update(@group);
@@ -435,6 +441,22 @@ namespace DabaTaseApp.Controllers
             if (@group != null) _context.Groups.Remove(@group);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task ValidateGroupAsync(Group group)
+        {
+            group.GroupName = (group.GroupName ?? string.Empty).Trim();
+
+            if (await _context.Groups.AnyAsync(g => g.Id != group.Id && g.GroupName == group.GroupName))
+            {
+                ModelState.AddModelError(nameof(Group.GroupName), "Група з такою назвою вже існує.");
+            }
+
+            if (group.TheoryInstructorId.HasValue &&
+                !await _context.Instructors.AnyAsync(i => i.Id == group.TheoryInstructorId.Value))
+            {
+                ModelState.AddModelError(nameof(Group.TheoryInstructorId), "Обраний інструктор не існує.");
+            }
         }
     }
 }

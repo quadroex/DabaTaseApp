@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using DabaTaseApp.Models;
+using DabaTaseApp.Security;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace DabaTaseApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = AppPolicies.Statistics)]
     public class ChartsController : ControllerBase
     {
         private readonly Lab1Context _context;
@@ -20,37 +22,47 @@ namespace DabaTaseApp.Controllers
         }
 
         [HttpGet("studentsByCategory")]
-        public async Task<JsonResult> GetStudentsByCategory()
+        public async Task<IActionResult> GetStudentsByCategory()
         {
             var data = await _context.Students
                 .GroupBy(s => s.TargetCategory)
                 .Select(g => new { label = g.Key, value = g.Count() })
                 .ToListAsync();
-            return new JsonResult(data);
+            return Ok(data);
         }
 
         [HttpGet("sessionsByInstructor")]
-        public async Task<JsonResult> GetSessionsByInstructor([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetSessionsByInstructor([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
+            if (!IsValidDateRange(startDate, endDate))
+            {
+                return BadRequest(new { message = "Дата початку не може бути пізніше дати закінчення." });
+            }
+
             var query = _context.PracticeSessions.Include(p => p.Instructor).AsQueryable();
 
             if (startDate.HasValue) query = query.Where(p => p.StartTime >= startDate.Value);
-            if (endDate.HasValue) query = query.Where(p => p.StartTime <= endDate.Value);
+            if (endDate.HasValue) query = query.Where(p => p.StartTime < endDate.Value.Date.AddDays(1));
 
             var data = await query
                 .GroupBy(p => p.Instructor.FullName)
                 .Select(g => new { label = g.Key, value = g.Count() })
                 .ToListAsync();
-            return new JsonResult(data);
+            return Ok(data);
         }
 
         [HttpGet("revenueByDate")]
-        public async Task<JsonResult> GetRevenueByDate([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetRevenueByDate([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
+            if (!IsValidDateRange(startDate, endDate))
+            {
+                return BadRequest(new { message = "Дата початку не може бути пізніше дати закінчення." });
+            }
+
             var query = _context.Payments.AsQueryable();
 
             if (startDate.HasValue) query = query.Where(p => p.PaymentDate >= startDate.Value);
-            if (endDate.HasValue) query = query.Where(p => p.PaymentDate <= endDate.Value);
+            if (endDate.HasValue) query = query.Where(p => p.PaymentDate < endDate.Value.Date.AddDays(1));
 
             var rawData = await query
                 .GroupBy(p => p.PaymentDate.Date)
@@ -66,7 +78,12 @@ namespace DabaTaseApp.Controllers
                 value = (double)d.TotalAmount
             });
 
-            return new JsonResult(data);
+            return Ok(data);
+        }
+
+        private static bool IsValidDateRange(DateTime? startDate, DateTime? endDate)
+        {
+            return !startDate.HasValue || !endDate.HasValue || startDate.Value.Date <= endDate.Value.Date;
         }
     }
 }

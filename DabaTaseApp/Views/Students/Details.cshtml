@@ -1,13 +1,17 @@
 ﻿@model DabaTaseApp.Models.Student
 @{
     ViewData["Title"] = "Картка учня";
+    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0 text-primary">@Model.FullName</h1>
-    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary shadow-sm">
-        <i class="bi bi-pencil me-2"></i>Редагувати
-    </a>
+    @if (canManage)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-2"></i>Редагувати
+        </a>
+    }
 </div>
 
 <div class="row">
@@ -25,6 +29,11 @@
                 <dd class="col-sm-8 fs-5 fw-bold text-@(Model.Balance < 0 ? "danger" : "success")">
                     @Model.Balance.ToString("N2") ₴
                 </dd>
+                @if (canManage)
+                {
+                    <dt class="col-sm-4 text-muted">Акаунт</dt>
+                    <dd class="col-sm-8">@((Model.ApplicationUser?.Email) ?? "Не прив'язано")</dd>
+                }
             </dl>
         </div>
     </div>

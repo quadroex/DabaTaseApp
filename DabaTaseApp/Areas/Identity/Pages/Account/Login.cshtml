@@ -1,0 +1,56 @@
+@page
+@model DabaTaseApp.Areas.Identity.Pages.Account.LoginModel
+
+@{
+    ViewData["Title"] = "Вхід";
+}
+
+<div class="auth-shell">
+    <section class="auth-panel auth-copy">
+        <p class="eyebrow">DriveForce Control</p>
+        <h1>Увійдіть у робочий кабінет</h1>
+        <p>Єдиний простір для адміністраторів, інструкторів та учнів автошколи.</p>
+        <div class="auth-metrics">
+            <span><strong>3</strong> ролі</span>
+            <span><strong>24/7</strong> доступ</span>
+            <span><strong>RBAC</strong> захист</span>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <form method="post" class="auth-form">
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-control form-control-lg" autocomplete="username" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">Пароль</label>
+                <input asp-for="Input.Password" class="form-control form-control-lg" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
+            </button>
+
+            <div class="auth-switch">
+                Немає акаунта?
+                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Створити учнівський доступ</a>
+            </div>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

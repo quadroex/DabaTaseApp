@@ -1,24 +1,43 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
 
-<ul class="navbar-nav ms-auto gap-2 align-items-center border-start border-light ps-lg-4">
+<ul class="navbar-nav user-nav align-items-xl-center">
     @if (SignInManager.IsSignedIn(User))
     {
+        var role = User.IsInRole(AppRoles.Admin)
+            ? AppRoles.Admin
+            : User.IsInRole(AppRoles.Instructor)
+                ? AppRoles.Instructor
+                : AppRoles.Student;
+
         <li class="nav-item">
-            <a class="nav-link text-white small" asp-area="Identity" asp-page="/Account/Manage/Index">
-                <i class="bi bi-person-circle me-1"></i> @User.Identity?.Name
+            <a class="user-pill" asp-area="Identity" asp-page="/Account/Manage/Index">
+                <span class="user-avatar"><i class="bi bi-person"></i></span>
+                <span class="user-meta">
+                    <span>@User.Identity?.Name</span>
+                    <span class="role-chip role-chip-@role">@role</span>
+                </span>
             </a>
         </li>
         <li class="nav-item">
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-3">Вийти</button>
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="btn btn-outline-light btn-sm icon-button" aria-label="Вийти">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
             </form>
         </li>
     }
     else
     {
-        <li class="nav-item"><a class="nav-link text-white opacity-75 small" asp-area="Identity" asp-page="/Account/Register">Реєстрація</a></li>
-        <li class="nav-item"><a class="btn btn-sm btn-light text-primary rounded-pill px-4 fw-bold shadow-sm" asp-area="Identity" asp-page="/Account/Login">Увійти</a></li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
+                <i class="bi bi-person-plus"></i><span>Реєстрація</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="btn btn-light btn-sm" asp-area="Identity" asp-page="/Account/Login">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Вхід
+            </a>
+        </li>
     }
 </ul>

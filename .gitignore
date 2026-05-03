@@ -66,6 +66,9 @@ artifacts/
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
+# Local runtime artifacts
+DabaTaseApp/App_Data/DataProtectionKeys/
+
 # StyleCop
 StyleCopReport.xml
 

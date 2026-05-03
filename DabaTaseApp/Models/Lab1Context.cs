@@ -168,14 +168,24 @@ public partial class Lab1Context : IdentityDbContext<IdentityUser>
             entity.ToTable("students");
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Balance).HasColumnName("balance");
+            entity.Property(e => e.ApplicationUserId).HasColumnName("application_user_id");
             entity.Property(e => e.FullName).HasColumnName("full_name");
             entity.Property(e => e.GroupId).HasColumnName("group_id");
             entity.Property(e => e.TargetCategory).HasColumnName("target_category");
+
+            entity.HasIndex(e => e.ApplicationUserId)
+                .IsUnique()
+                .HasDatabaseName("IX_students_application_user_id");
 
             entity.HasOne(d => d.Group).WithMany(p => p.Students)
                 .HasForeignKey(d => d.GroupId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("students_group_id_fkey");
+
+            entity.HasOne(d => d.ApplicationUser).WithOne()
+                .HasForeignKey<Student>(d => d.ApplicationUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("students_application_user_id_fkey");
         });
 
         modelBuilder.Entity<TheorySession>(entity =>

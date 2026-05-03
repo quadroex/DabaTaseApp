@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DabaTaseApp.Controllers
 {
-    [Authorize(Roles = "admin,instructor")]
+    [Authorize(Roles = DabaTaseApp.Security.AppRoles.AdminOrInstructor)]
     public class VehiclesController : Controller
     {
         private readonly Lab1Context _context;
@@ -57,6 +57,15 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("PlateNumber,Mark,Model,IsActive")] Vehicle vehicle)
         {
+            vehicle.PlateNumber = (vehicle.PlateNumber ?? string.Empty).Trim().ToUpperInvariant();
+            vehicle.Mark = (vehicle.Mark ?? string.Empty).Trim();
+            vehicle.Model = (vehicle.Model ?? string.Empty).Trim();
+
+            if (await _context.Vehicles.AnyAsync(v => v.PlateNumber == vehicle.PlateNumber))
+            {
+                ModelState.AddModelError(nameof(Vehicle.PlateNumber), "Автомобіль із таким номерним знаком уже існує.");
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(vehicle);
@@ -89,6 +98,10 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(string id, [Bind("PlateNumber,Mark,Model,IsActive")] Vehicle vehicle)
         {
+            vehicle.PlateNumber = (vehicle.PlateNumber ?? string.Empty).Trim().ToUpperInvariant();
+            vehicle.Mark = (vehicle.Mark ?? string.Empty).Trim();
+            vehicle.Model = (vehicle.Model ?? string.Empty).Trim();
+
             if (id != vehicle.PlateNumber)
             {
                 return NotFound();

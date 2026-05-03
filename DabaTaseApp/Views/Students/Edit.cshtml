@@ -1,60 +1,64 @@
-﻿@model DabaTaseApp.Models.Student
+@model DabaTaseApp.Models.Student
 
 @{
-    
+    ViewData["Title"] = "Редагувати учня";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Редагувати</title>
-</head>
-<body>
-
-<h4>Student</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="mb-3">
-                <label asp-for="FullName" class="control-label"></label>
-                <input asp-for="FullName" class="form-control" />
-                <span asp-validation-for="FullName" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="GroupId" class="control-label"></label>
-                <select asp-for="GroupId" class="form-control" asp-items="ViewBag.GroupId">
-                    <option value="">Без групи</option>
-                </select>
-                <span asp-validation-for="GroupId" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Balance" class="control-label"></label>
-                <input asp-for="Balance" class="form-control" />
-                <span asp-validation-for="Balance" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="TargetCategory" class="control-label"></label>
-                <select asp-for="TargetCategory" class="form-control" asp-items="ViewBag.TargetCategory"></select>
-                <span asp-validation-for="TargetCategory" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Картка учня</p>
+        <h1 class="mb-0">@Model.FullName</h1>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
+<div class="card-custom">
+    <form asp-action="Edit" class="row g-3">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="ApplicationUserId" class="form-label"></label>
+            <select asp-for="ApplicationUserId" class="form-select" asp-items="ViewBag.ApplicationUserId">
+                <option value="">Не прив'язувати акаунт</option>
+            </select>
+            <span asp-validation-for="ApplicationUserId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label asp-for="GroupId" class="form-label"></label>
+            <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
+                <option value="">Без групи</option>
+            </select>
+            <span asp-validation-for="GroupId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label asp-for="TargetCategory" class="form-label"></label>
+            <select asp-for="TargetCategory" class="form-select" asp-items="ViewBag.TargetCategory"></select>
+            <span asp-validation-for="TargetCategory" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label asp-for="Balance" class="form-label"></label>
+            <input asp-for="Balance" class="form-control" />
+            <span asp-validation-for="Balance" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2 me-2"></i>Зберегти
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
-</body>
-</html>

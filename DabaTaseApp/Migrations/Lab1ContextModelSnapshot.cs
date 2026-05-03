@@ -198,6 +198,10 @@ namespace DabaTaseApp.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("balance");
 
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("text")
+                        .HasColumnName("application_user_id");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("text")
@@ -214,6 +218,10 @@ namespace DabaTaseApp.Migrations
 
                     b.HasKey("Id")
                         .HasName("students_pkey");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_students_application_user_id");
 
                     b.HasIndex("GroupId");
 
@@ -562,11 +570,19 @@ namespace DabaTaseApp.Migrations
 
             modelBuilder.Entity("DabaTaseApp.Models.Student", b =>
                 {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ApplicationUser")
+                        .WithOne()
+                        .HasForeignKey("DabaTaseApp.Models.Student", "ApplicationUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("students_application_user_id_fkey");
+
                     b.HasOne("DabaTaseApp.Models.Group", "Group")
                         .WithMany("Students")
                         .HasForeignKey("GroupId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("students_group_id_fkey");
+
+                    b.Navigation("ApplicationUser");
 
                     b.Navigation("Group");
                 });

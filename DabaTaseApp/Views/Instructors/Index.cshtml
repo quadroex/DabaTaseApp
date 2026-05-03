@@ -1,6 +1,7 @@
 ﻿@model IEnumerable<DabaTaseApp.Models.Instructor>
 @{
     ViewData["Title"] = "Інструктори";
+    var canManage = User.IsInRole(AppRoles.Admin);
 }
 
 <div class="d-flex justify-content-between align-items-end mb-4">
@@ -8,9 +9,12 @@
         <h1 class="mb-0">Команда інструкторів</h1>
         <p class="text-muted mb-0">Керування викладацьким складом автошколи</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary px-4 py-2 shadow-sm" style="border-radius: 12px;">
-        <i class="bi bi-plus-lg me-2"></i>Додати інструктора
-    </a>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary px-4 py-2 shadow-sm" style="border-radius: 12px;">
+            <i class="bi bi-plus-lg me-2"></i>Додати інструктора
+        </a>
+    }
 </div>
 
 <div class="card-custom">
@@ -20,6 +24,7 @@
                 <th>ПІБ Інструктора</th>
                 <th>Номер телефону</th>
                 <th>Серія ліцензії</th>
+                <th>Акаунт</th>
                 <th class="text-end">Дії</th>
             </tr>
         </thead>
@@ -30,17 +35,21 @@
                     <td class="fw-bold">@item.FullName</td>
                     <td><i class="bi bi-telephone-fill text-muted me-2"></i>+@item.PhoneNumber?.Replace("+", "")</td>
                     <td><span class="badge bg-light text-primary border">@item.LicenseSerial</span></td>
+                    <td class="text-muted small">@(item.ApplicationUser?.Email ?? "Не прив'язано")</td>
                     <td class="text-end">
                         <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" title="Редагувати">
-                                <i class="bi bi-pencil-square text-primary"></i>
-                            </a>
                             <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" title="Деталі">
                                 <i class="bi bi-info-circle text-info"></i>
                             </a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action" title="Видалити">
-                                <i class="bi bi-trash3 text-danger"></i>
-                            </a>
+                            @if (canManage)
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" title="Редагувати">
+                                    <i class="bi bi-pencil-square text-primary"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action" title="Видалити">
+                                    <i class="bi bi-trash3 text-danger"></i>
+                                </a>
+                            }
                         </div>
                     </td>
                 </tr>

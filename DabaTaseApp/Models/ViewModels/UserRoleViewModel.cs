@@ -1,0 +1,67 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
+
+namespace DabaTaseApp.Models.ViewModels;
+
+public class UserRoleViewModel
+{
+    public string Id { get; set; } = string.Empty;
+
+    public string Email { get; set; } = string.Empty;
+
+    public string UserName { get; set; } = string.Empty;
+
+    public string SelectedRole { get; set; } = string.Empty;
+
+    public IReadOnlyList<string> Roles { get; set; } = [];
+
+    public bool CanChangeRole { get; set; }
+
+    public string ProfileStatus { get; set; } = string.Empty;
+}
+
+public class UsersIndexViewModel
+{
+    public IReadOnlyList<string> AvailableRoles { get; set; } = [];
+
+    public IReadOnlyList<SelectListItem> CategoryOptions { get; set; } = [];
+
+    public CreateUserViewModel NewUser { get; set; } = new();
+
+    public List<UserRoleViewModel> Users { get; set; } = [];
+}
+
+public class CreateUserViewModel
+{
+    [Required(ErrorMessage = "Вкажіть email.")]
+    [EmailAddress(ErrorMessage = "Вкажіть коректний email.")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Вкажіть роль.")]
+    public string Role { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Вкажіть пароль.")]
+    [DataType(DataType.Password)]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Пароль має містити щонайменше 8 символів.")]
+    public string Password { get; set; } = string.Empty;
+
+    [DataType(DataType.Password)]
+    [Compare(nameof(Password), ErrorMessage = "Паролі не збігаються.")]
+    public string ConfirmPassword { get; set; } = string.Empty;
+
+    [Display(Name = "ПІБ")]
+    [StringLength(120, MinimumLength = 3, ErrorMessage = "ПІБ має містити від 3 до 120 символів.")]
+    public string? FullName { get; set; }
+
+    [Display(Name = "Категорія")]
+    public string? TargetCategory { get; set; }
+
+    [Display(Name = "Телефон")]
+    [Phone(ErrorMessage = "Вкажіть коректний номер телефону.")]
+    [StringLength(30, ErrorMessage = "Номер телефону надто довгий.")]
+    public string? PhoneNumber { get; set; }
+
+    [Display(Name = "Ліцензія")]
+    [StringLength(40, MinimumLength = 3, ErrorMessage = "Ліцензія має містити від 3 до 40 символів.")]
+    public string? LicenseSerial { get; set; }
+}

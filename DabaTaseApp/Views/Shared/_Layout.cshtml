@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="utf-8" />
@@ -11,94 +11,138 @@
 <body>
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentArea = ViewContext.RouteData.Values["area"]?.ToString();
+        var isIdentityPage = string.Equals(currentArea, "Identity", StringComparison.OrdinalIgnoreCase);
+        var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
     }
 
-    <header>
-        <nav class="navbar navbar-expand-lg sticky-top">
-            <div class="container-fluid px-4">
-                <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
-                    <div class="bg-white rounded p-1 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                        <i class="bi bi-shield-check text-primary fs-5"></i>
-                    </div>
-                    DriveForce
+    <header class="app-header">
+        <nav class="navbar navbar-expand-xl sticky-top">
+            <div class="container-fluid px-3 px-lg-4">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark"><i class="bi bi-signpost-split"></i></span>
+                    <span>DriveForce</span>
                 </a>
-                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <i class="bi bi-list text-white fs-2"></i>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="bi bi-list"></i>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
-                    <ul class="navbar-nav mb-2 mb-lg-0 gap-1">
-                        @if (User.Identity.IsAuthenticated)
+
+                <div id="mainNav" class="navbar-collapse collapse">
+                    <ul class="navbar-nav mx-xl-auto mb-2 mb-xl-0">
+                        @if (isAuthenticated)
                         {
-                            @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-speedometer2"></i><span>Панель</span>
+                                </a>
+                            </li>
+
+                            @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">Учні</a>
+                                    <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">
+                                        <i class="bi bi-mortarboard"></i><span>Учні</span>
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">Групи</a>
+                                    <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">
+                                        <i class="bi bi-diagram-3"></i><span>Групи</span>
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">Інструктори</a>
+                                    <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">
+                                        <i class="bi bi-person-badge"></i><span>Інструктори</span>
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">Автопарк</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">Категорії</a>
+                                    <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">
+                                        <i class="bi bi-car-front"></i><span>Автопарк</span>
+                                    </a>
                                 </li>
                             }
 
                             <li class="nav-item">
-                                <a class="nav-link @(currentController == "TheorySessions" ? "active" : "")" asp-controller="TheorySessions" asp-action="Index">Теорія</a>
+                                <a class="nav-link @(currentController == "TheorySessions" ? "active" : "")" asp-controller="TheorySessions" asp-action="Index">
+                                    <i class="bi bi-journal-text"></i><span>Теорія</span>
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link @(currentController == "PracticeSessions" ? "active" : "")" asp-controller="PracticeSessions" asp-action="Index">Практика</a>
+                                <a class="nav-link @(currentController == "PracticeSessions" ? "active" : "")" asp-controller="PracticeSessions" asp-action="Index">
+                                    <i class="bi bi-cone-striped"></i><span>Практика</span>
+                                </a>
                             </li>
 
-                            @if (User.IsInRole("admin") || User.IsInRole("student"))
+                            @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Student))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="Index">
-                                        <i class="bi bi-cash-coin me-1"></i>Фінанси
+                                        <i class="bi bi-wallet2"></i><span>Фінанси</span>
+                                    </a>
+                                </li>
+                            }
+
+                            @if (User.IsInRole(AppRoles.Admin))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">
+                                        <i class="bi bi-tags"></i><span>Категорії</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index">
+                                        <i class="bi bi-shield-lock"></i><span>Доступи</span>
                                     </a>
                                 </li>
                             }
                         }
                     </ul>
+
                     <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="page-header">
-        <div class="container-fluid px-5">
-            <div class="breadcrumb-custom">
-                <i class="bi bi-house-door"></i>
-                <span>/</span>
-                <span>DriveForce</span>
-                <span>/</span>
-                <span class="text-primary fw-medium">@ViewData["Title"]</span>
+    @if (!isIdentityPage)
+    {
+        <section class="page-header">
+            <div class="container-fluid px-3 px-lg-5">
+                <div class="breadcrumb-custom">
+                    <i class="bi bi-house-door"></i>
+                    <span>DriveForce</span>
+                    <i class="bi bi-chevron-right"></i>
+                    <span class="fw-semibold">@ViewData["Title"]</span>
+                </div>
+                <h2 class="m-0">@ViewData["Title"]</h2>
             </div>
-            <h2 class="fw-bold m-0">@ViewData["Title"]</h2>
-        </div>
+        </section>
+    }
+
+    <div class="container-fluid main-content px-3 px-lg-5 flex-grow-1">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <main role="main">
+            @RenderBody()
+        </main>
     </div>
 
-    <div class="container-fluid main-content px-5 flex-grow-1">
-        <div class="row justify-content-center">
-            <div class="col-12 col-xxl-11">
-                <main role="main" class="pb-3">
-                    @RenderBody()
-                </main>
-            </div>
-        </div>
-    </div>
-
-    <footer class="border-top footer text-muted bg-white py-4 mt-auto">
-        <div class="container text-center">
-            <span class="fw-medium text-dark">&copy; 2026 — DriveForce</span>
-            <br />
-            <small>Професійна екосистема керування автошколою</small>
+    <footer class="footer">
+        <div class="container-fluid px-3 px-lg-5 d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+            <span>&copy; 2026 DriveForce</span>
+            <span class="text-muted">Автошкола, розклад, фінанси, доступи</span>
         </div>
     </footer>
 

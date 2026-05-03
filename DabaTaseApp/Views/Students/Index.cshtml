@@ -1,47 +1,83 @@
-﻿@model IEnumerable<DabaTaseApp.Models.Student>
+@model IEnumerable<DabaTaseApp.Models.Student>
+
 @{
     ViewData["Title"] = "Учні";
+    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Керування учнями</h1>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">
-        <i class="bi bi-plus-lg me-2"></i>Додати учня
-    </a>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Навчання</p>
+        <h1 class="mb-0">Керування учнями</h1>
+        <p class="text-muted mb-0">Картки, групи, баланс та прив'язка до акаунтів.</p>
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Додати учня
+        </a>
+    }
 </div>
 
 <div class="card-custom">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ПІБ Учня</th>
-                <th>Баланс</th>
-                <th>Категорія</th>
-                <th>Група</th>
-                <th class="text-end">Дії</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td class="fw-bold">@item.FullName</td>
-                    <td>
-                        <span class="text-@(item.Balance < 0 ? "danger" : "success") fw-bold">
-                            @item.Balance.ToString("C")
-                        </span>
-                    </td>
-                    <td><span class="badge bg-light text-dark border">@item.TargetCategory</span></td>
-                    <td>@(item.Group?.GroupName ?? "Без групи")</td>
-                    <td class="text-end">
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-pencil-square text-primary"></i></a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-info-circle text-info"></i></a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action"><i class="bi bi-trash3 text-danger"></i></a>
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-mortarboard"></i>
+            <h5>Учнів не знайдено</h5>
+            <p>Дані з'являться після створення або прив'язки картки учня.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Учень</th>
+                        <th>Баланс</th>
+                        <th>Категорія</th>
+                        <th>Група</th>
+                        @if (canManage)
+                        {
+                            <th>Акаунт</th>
+                        }
+                        <th class="text-end">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">@item.FullName</td>
+                            <td>
+                                <span class="fw-bold text-@(item.Balance < 0 ? "danger" : "success")">
+                                    @item.Balance.ToString("N0") ₴
+                                </span>
+                            </td>
+                            <td><span class="status-badge status-planned">@item.TargetCategory</span></td>
+                            <td>@(item.Group?.GroupName ?? "Без групи")</td>
+                            @if (canManage)
+                            {
+                                <td class="text-muted small">@(item.ApplicationUser?.Email ?? "Не прив'язано")</td>
+                            }
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    @if (canManage)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
+                                    @if (canManage)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action text-danger" aria-label="Видалити"><i class="bi bi-trash3"></i></a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
