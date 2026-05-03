@@ -39,16 +39,6 @@ namespace DabaTaseApp.Controllers
 
                 query = query.Where(p => p.StudentId == student.Id);
             }
-            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null)
-                {
-                    return View(Array.Empty<PracticeSession>());
-                }
-
-                query = query.Where(p => p.InstructorId == instructor.Id);
-            }
 
             return View(await query.ToListAsync());
         }
@@ -79,14 +69,6 @@ namespace DabaTaseApp.Controllers
                     return Forbid();
                 }
             }
-            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || practiceSession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
 
             return View(practiceSession);
         }
@@ -94,11 +76,6 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         public async Task<IActionResult> Create()
         {
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin) && await GetCurrentInstructorAsync() == null)
-            {
-                return Forbid();
-            }
-
             await PopulateSelectListsAsync();
             return View();
         }
@@ -108,17 +85,6 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
         {
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null)
-                {
-                    return Forbid();
-                }
-
-                practiceSession.InstructorId = instructor.Id;
-            }
-
             ValidateSessionWindow(practiceSession);
             RemoveNavigationModelState();
 
@@ -147,15 +113,6 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || practiceSession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
-
             await PopulateSelectListsAsync(practiceSession);
             return View(practiceSession);
         }
@@ -168,23 +125,6 @@ namespace DabaTaseApp.Controllers
             if (id != practiceSession.Id)
             {
                 return NotFound();
-            }
-
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                var existingSession = await _context.PracticeSessions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
-                if (existingSession == null)
-                {
-                    return NotFound();
-                }
-
-                if (instructor == null || existingSession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-
-                practiceSession.InstructorId = instructor.Id;
             }
 
             ValidateSessionWindow(practiceSession);
@@ -233,15 +173,6 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || practiceSession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
-
             return View(practiceSession);
         }
 
@@ -253,15 +184,6 @@ namespace DabaTaseApp.Controllers
             var practiceSession = await _context.PracticeSessions.FindAsync(id);
             if (practiceSession != null)
             {
-                if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-                {
-                    var instructor = await GetCurrentInstructorAsync();
-                    if (instructor == null || practiceSession.InstructorId != instructor.Id)
-                    {
-                        return Forbid();
-                    }
-                }
-
                 _context.PracticeSessions.Remove(practiceSession);
             }
 
@@ -271,17 +193,8 @@ namespace DabaTaseApp.Controllers
 
         private async Task PopulateSelectListsAsync(PracticeSession? practiceSession = null)
         {
-            var instructorsQuery = _context.Instructors.OrderBy(i => i.FullName).AsQueryable();
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var currentInstructor = await GetCurrentInstructorAsync();
-                instructorsQuery = currentInstructor == null
-                    ? instructorsQuery.Where(i => false)
-                    : instructorsQuery.Where(i => i.Id == currentInstructor.Id);
-            }
-
             ViewData["InstructorId"] = new SelectList(
-                await instructorsQuery.ToListAsync(),
+                await _context.Instructors.OrderBy(i => i.FullName).ToListAsync(),
                 "Id",
                 "FullName",
                 practiceSession?.InstructorId);
@@ -333,14 +246,6 @@ namespace DabaTaseApp.Controllers
             return string.IsNullOrWhiteSpace(userId)
                 ? null
                 : await _context.Students.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
-        }
-
-        private async Task<Instructor?> GetCurrentInstructorAsync()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return string.IsNullOrWhiteSpace(userId)
-                ? null
-                : await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
         }
 
         private void ValidateSessionWindow(PracticeSession practiceSession)

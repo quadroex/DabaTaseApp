@@ -38,16 +38,6 @@ namespace DabaTaseApp.Controllers
 
                 query = query.Where(t => t.GroupId == student.GroupId);
             }
-            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null)
-                {
-                    return View(Array.Empty<TheorySession>());
-                }
-
-                query = query.Where(t => t.InstructorId == instructor.Id);
-            }
 
             return View(await query.ToListAsync());
         }
@@ -77,14 +67,6 @@ namespace DabaTaseApp.Controllers
                     return Forbid();
                 }
             }
-            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || theorySession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
 
             return View(theorySession);
         }
@@ -92,11 +74,6 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         public async Task<IActionResult> Create()
         {
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin) && await GetCurrentInstructorAsync() == null)
-            {
-                return Forbid();
-            }
-
             await PopulateSelectListsAsync();
             return View();
         }
@@ -106,17 +83,6 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
         {
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null)
-                {
-                    return Forbid();
-                }
-
-                theorySession.InstructorId = instructor.Id;
-            }
-
             ValidateSessionWindow(theorySession);
             ModelState.Remove(nameof(TheorySession.Group));
             ModelState.Remove(nameof(TheorySession.Instructor));
@@ -146,15 +112,6 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || theorySession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
-
             await PopulateSelectListsAsync(theorySession);
             return View(theorySession);
         }
@@ -167,23 +124,6 @@ namespace DabaTaseApp.Controllers
             if (id != theorySession.Id)
             {
                 return NotFound();
-            }
-
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                var existingSession = await _context.TheorySessions.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-                if (existingSession == null)
-                {
-                    return NotFound();
-                }
-
-                if (instructor == null || existingSession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-
-                theorySession.InstructorId = instructor.Id;
             }
 
             ValidateSessionWindow(theorySession);
@@ -232,15 +172,6 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var instructor = await GetCurrentInstructorAsync();
-                if (instructor == null || theorySession.InstructorId != instructor.Id)
-                {
-                    return Forbid();
-                }
-            }
-
             return View(theorySession);
         }
 
@@ -252,15 +183,6 @@ namespace DabaTaseApp.Controllers
             var theorySession = await _context.TheorySessions.FindAsync(id);
             if (theorySession != null)
             {
-                if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-                {
-                    var instructor = await GetCurrentInstructorAsync();
-                    if (instructor == null || theorySession.InstructorId != instructor.Id)
-                    {
-                        return Forbid();
-                    }
-                }
-
                 _context.TheorySessions.Remove(theorySession);
             }
 
@@ -270,15 +192,6 @@ namespace DabaTaseApp.Controllers
 
         private async Task PopulateSelectListsAsync(TheorySession? theorySession = null)
         {
-            var instructorsQuery = _context.Instructors.OrderBy(i => i.FullName).AsQueryable();
-            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
-            {
-                var currentInstructor = await GetCurrentInstructorAsync();
-                instructorsQuery = currentInstructor == null
-                    ? instructorsQuery.Where(i => false)
-                    : instructorsQuery.Where(i => i.Id == currentInstructor.Id);
-            }
-
             ViewData["GroupId"] = new SelectList(
                 await _context.Groups.OrderBy(g => g.GroupName).ToListAsync(),
                 "Id",
@@ -286,7 +199,7 @@ namespace DabaTaseApp.Controllers
                 theorySession?.GroupId);
 
             ViewData["InstructorId"] = new SelectList(
-                await instructorsQuery.ToListAsync(),
+                await _context.Instructors.OrderBy(i => i.FullName).ToListAsync(),
                 "Id",
                 "FullName",
                 theorySession?.InstructorId);
@@ -326,14 +239,6 @@ namespace DabaTaseApp.Controllers
             return string.IsNullOrWhiteSpace(userId)
                 ? null
                 : await _context.Students.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
-        }
-
-        private async Task<Instructor?> GetCurrentInstructorAsync()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return string.IsNullOrWhiteSpace(userId)
-                ? null
-                : await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
         }
 
         private void ValidateSessionWindow(TheorySession theorySession)
