@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace DabaTaseApp.Models;
 
-public partial class Lab1Context : DbContext //IdentityDbContext<IdentityUser>
+public partial class Lab1Context : IdentityDbContext<IdentityUser>
 {
     public Lab1Context()
     {
@@ -35,7 +35,7 @@ public partial class Lab1Context : DbContext //IdentityDbContext<IdentityUser>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        //base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Category>(entity =>
         {

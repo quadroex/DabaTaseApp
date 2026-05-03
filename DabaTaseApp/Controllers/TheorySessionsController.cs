@@ -1,14 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DabaTaseApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using DabaTaseApp.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DabaTaseApp.Controllers
 {
+    [Authorize]
     public class TheorySessionsController : Controller
     {
         private readonly Lab1Context _context;
@@ -70,6 +72,7 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+        [Authorize(Roles = "admin,instructor")]
         public IActionResult Create()
         {
             ViewData["GroupId"] = new SelectList(_context.Groups, "Id", "GroupName");
@@ -77,6 +80,7 @@ namespace DabaTaseApp.Controllers
             return View();
         }
 
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
@@ -100,6 +104,7 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -117,6 +122,7 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
@@ -159,6 +165,7 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -179,6 +186,7 @@ namespace DabaTaseApp.Controllers
             return View(theorySession);
         }
 
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using ClosedXML.Excel;
 using System;
@@ -10,6 +11,7 @@ using DabaTaseApp.Models;
 
 namespace DabaTaseApp.Controllers
 {
+    [Authorize(Roles = "admin")]
     public class CategoriesController : Controller
     {
         private readonly Lab1Context _context;

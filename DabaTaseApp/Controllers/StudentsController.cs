@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DabaTaseApp.Controllers
 {
-    // [Authorize]
+    [Authorize]
     public class StudentsController : Controller
     {
         private readonly Lab1Context _context;
@@ -21,19 +21,18 @@ namespace DabaTaseApp.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index(int? id, string? name)
+        public async Task<IActionResult> Index()
         {
-            if (id == null)
+            if (User.IsInRole("student"))
             {
-                var allStudents = _context.Students.Include(s => s.Group);
-                return View(await allStudents.ToListAsync());
+                var student = await _context.Students
+                    .Include(s => s.Group)
+                    .Where(s => s.FullName == User.Identity.Name)
+                    .ToListAsync();
+                return View(student);
             }
 
-            ViewBag.GroupId = id;
-            ViewBag.GroupName = name;
-
-            var studentsByGroup = _context.Students.Where(s => s.GroupId == id).Include(s => s.Group);
-            return View(await studentsByGroup.ToListAsync());
+            return View(await _context.Students.Include(s => s.Group).ToListAsync());
         }
 
         // GET: Students/Details

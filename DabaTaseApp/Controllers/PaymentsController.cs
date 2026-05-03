@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace DabaTaseApp.Controllers
 {
-    // [Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin,student")]
     public class PaymentsController : Controller
     {
         private readonly Lab1Context _context;

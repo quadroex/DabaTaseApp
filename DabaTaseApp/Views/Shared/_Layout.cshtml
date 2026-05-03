@@ -27,31 +27,45 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
                     <ul class="navbar-nav mb-2 mb-lg-0 gap-1">
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">Учні</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">Інструктори</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">Групи</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">Автопарк</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "TheorySessions" ? "active" : "")" asp-controller="TheorySessions" asp-action="Index">Теорія</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "PracticeSessions" ? "active" : "")" asp-controller="PracticeSessions" asp-action="Index">Практика</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="Index">Фінанси</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">Категорії</a>
-                        </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">Учні</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">Групи</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">Інструктори</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">Автопарк</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">Категорії</a>
+                                </li>
+                            }
+
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "TheorySessions" ? "active" : "")" asp-controller="TheorySessions" asp-action="Index">Теорія</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "PracticeSessions" ? "active" : "")" asp-controller="PracticeSessions" asp-action="Index">Практика</a>
+                            </li>
+
+                            @if (User.IsInRole("admin") || User.IsInRole("student"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="Index">
+                                        <i class="bi bi-cash-coin me-1"></i>Фінанси
+                                    </a>
+                                </li>
+                            }
+                        }
                     </ul>
+                    <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>

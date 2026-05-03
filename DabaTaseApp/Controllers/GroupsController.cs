@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using DabaTaseApp.Models;
 using ClosedXML.Excel;
 using System.Text;
 
 namespace DabaTaseApp.Controllers
 {
+    [Authorize(Roles = "admin,instructor")]
     public class GroupsController : Controller
     {
         private readonly Lab1Context _context;

@@ -1,14 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DabaTaseApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using DabaTaseApp.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DabaTaseApp.Controllers
 {
+    [Authorize]
     public class PracticeSessionsController : Controller
     {
         private readonly Lab1Context _context;
@@ -47,6 +49,7 @@ namespace DabaTaseApp.Controllers
         }
 
         // GET: PracticeSessions/Create
+        [Authorize(Roles = "admin,instructor")]
         public IActionResult Create()
         {
             ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName");
@@ -58,54 +61,36 @@ namespace DabaTaseApp.Controllers
         // POST: PracticeSessions/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost]
-
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> Create([Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
-
         {
-
             if (practiceSession.EndTime <= practiceSession.StartTime)
-
             {
-
                 ModelState.AddModelError("EndTime", "Час закінченя повинен бути пізніше за час початку.");
-
             }
 
-
-
             ModelState.Remove("Instructor");
-
             ModelState.Remove("Student");
-
             ModelState.Remove("VehiclePlateNavigation");
 
-
-
             if (ModelState.IsValid)
-
             {
-
                 _context.Add(practiceSession);
-
                 await _context.SaveChangesAsync();
-
                 return RedirectToAction(nameof(Index));
-
             }
 
             ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", practiceSession.InstructorId);
-
             ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", practiceSession.StudentId);
-
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber", practiceSession.VehiclePlate);
 
             return View(practiceSession);
-
         }
+
         // GET: PracticeSessions/Edit/5
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -127,91 +112,55 @@ namespace DabaTaseApp.Controllers
         // POST: PracticeSessions/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost]
-
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> Edit(int id, [Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
-
         {
-
             if (id != practiceSession.Id)
-
             {
-
                 return NotFound();
-
             }
-
-
 
             if (practiceSession.EndTime <= practiceSession.StartTime)
-
             {
-
                 ModelState.AddModelError("EndTime", "Час закінченя повинен бути пізніше за час початку.");
-
             }
 
-
-
             ModelState.Remove("Instructor");
-
             ModelState.Remove("Student");
-
             ModelState.Remove("VehiclePlateNavigation");
 
-
-
             if (ModelState.IsValid)
-
             {
-
                 try
                 {
-
                     _context.Update(practiceSession);
-
                     await _context.SaveChangesAsync();
-
                 }
-
                 catch (DbUpdateConcurrencyException)
-
                 {
-
                     if (!PracticeSessionExists(practiceSession.Id))
-
                     {
-
                         return NotFound();
-
                     }
-
                     else
                     {
-
                         throw;
-
                     }
-
                 }
-
                 return RedirectToAction(nameof(Index));
-
             }
 
             ViewData["InstructorId"] = new SelectList(_context.Instructors, "Id", "FullName", practiceSession.InstructorId);
-
             ViewData["StudentId"] = new SelectList(_context.Students, "Id", "FullName", practiceSession.StudentId);
-
             ViewData["VehiclePlate"] = new SelectList(_context.Vehicles, "PlateNumber", "PlateNumber", practiceSession.VehiclePlate);
 
             return View(practiceSession);
-
         }
 
         // GET: PracticeSessions/Delete/5
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -233,6 +182,7 @@ namespace DabaTaseApp.Controllers
         }
 
         // POST: PracticeSessions/Delete/5
+        [Authorize(Roles = "admin,instructor")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
