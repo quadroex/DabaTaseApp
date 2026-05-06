@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using DabaTaseApp.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace DabaTaseApp.Models;
 
@@ -10,8 +11,8 @@ public partial class Payment
     public int StudentId { get; set; }
 
     [Display(Name = "Сума")]
-    [Range(0.01, 1000000.00, ErrorMessage = "Сума платежу має бути додатньою.")]
-    public int Amount { get; set; }
+    [DecimalRange(0.01, 1000000, ErrorMessage = "Сума платежу має бути від 0.01 до 1 000 000 грн.")]
+    public decimal Amount { get; set; }
 
     [Display(Name = "Дата та час платежу")]
     public DateTime PaymentDate { get; set; }

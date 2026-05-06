@@ -62,25 +62,7 @@ namespace DabaTaseApp.Controllers
                 return View(nameof(Index), await BuildInvalidModelAsync(model.NewUser));
             }
 
-            if (model.NewUser.Role == AppRoles.Student)
-            {
-                _context.Students.Add(new Student
-                {
-                    ApplicationUserId = user.Id,
-                    FullName = model.NewUser.FullName!,
-                    TargetCategory = model.NewUser.TargetCategory ?? await GetDefaultCategoryAsync(),
-                    Balance = 0
-                });
-            }
-            else if (model.NewUser.Role == AppRoles.Instructor)
-            {
-                _context.Instructors.Add(new Instructor
-                {
-                    FullName = model.NewUser.FullName!,
-                    PhoneNumber = model.NewUser.PhoneNumber!,
-                    LicenseSerial = model.NewUser.LicenseSerial!
-                });
-            }
+            await AttachProfileForNewUserAsync(user.Id, model.NewUser);
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -142,6 +124,86 @@ namespace DabaTaseApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LinkStudentProfile(string userId, int studentId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, AppRoles.Student))
+            {
+                TempData["ErrorMessage"] = "До картки учня можна прив'язати тільки акаунт із роллю student.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null || student.ApplicationUserId != null)
+            {
+                TempData["ErrorMessage"] = "Оберіть неприв'язану картку учня.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            await DetachStudentProfileAsync(userId, save: false);
+            student.ApplicationUserId = userId;
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Картку учня прив'язано.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LinkInstructorProfile(string userId, int instructorId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, AppRoles.Instructor))
+            {
+                TempData["ErrorMessage"] = "До картки інструктора можна прив'язати тільки акаунт із роллю instructor.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var instructor = await _context.Instructors.FindAsync(instructorId);
+            if (instructor == null || instructor.ApplicationUserId != null)
+            {
+                TempData["ErrorMessage"] = "Оберіть неприв'язану картку інструктора.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            await DetachInstructorProfileAsync(userId, save: false);
+            instructor.ApplicationUserId = userId;
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Картку інструктора прив'язано.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnlinkProfile(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            await DetachStudentProfileAsync(userId, save: false);
+            await DetachInstructorProfileAsync(userId, save: false);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Профіль відв'язано від акаунта.";
+            return RedirectToAction(nameof(Index));
+        }
+
         private async Task<UsersIndexViewModel> BuildIndexModelAsync()
         {
             var users = await _userManager.Users
@@ -153,13 +215,22 @@ namespace DabaTaseApp.Controllers
                 .Select(s => new { s.ApplicationUserId, s.FullName })
                 .ToDictionaryAsync(s => s.ApplicationUserId!, s => s.FullName);
 
+            var linkedInstructors = await _context.Instructors
+                .Where(i => i.ApplicationUserId != null)
+                .Select(i => new { i.ApplicationUserId, i.FullName })
+                .ToDictionaryAsync(i => i.ApplicationUserId!, i => i.FullName);
+
             var model = new UsersIndexViewModel
             {
                 AvailableRoles = AppRoles.All,
                 CategoryOptions = await BuildCategoryOptionsAsync(),
+                GroupOptions = await BuildGroupOptionsAsync(),
+                UnlinkedStudentOptions = await BuildUnlinkedStudentOptionsAsync(),
+                UnlinkedInstructorOptions = await BuildUnlinkedInstructorOptionsAsync(),
                 NewUser = new CreateUserViewModel
                 {
                     Role = AppRoles.Student,
+                    ProfileMode = ProfileModes.CreateNew,
                     TargetCategory = await GetDefaultCategoryAsync()
                 }
             };
@@ -167,15 +238,18 @@ namespace DabaTaseApp.Controllers
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
+                var profileStatus = BuildProfileStatus(user.Id, roles, linkedStudents, linkedInstructors, out var hasLinkedProfile);
+
                 model.Users.Add(new UserRoleViewModel
                 {
                     Id = user.Id,
                     Email = user.Email ?? string.Empty,
                     UserName = user.UserName ?? string.Empty,
                     Roles = roles.ToList(),
-                    SelectedRole = roles.FirstOrDefault() ?? AppRoles.Student,
+                    SelectedRole = roles.FirstOrDefault() ?? string.Empty,
                     CanChangeRole = !roles.Contains(AppRoles.Admin),
-                    ProfileStatus = BuildProfileStatus(user.Id, roles, linkedStudents)
+                    ProfileStatus = profileStatus,
+                    HasLinkedProfile = hasLinkedProfile
                 });
             }
 
@@ -204,6 +278,32 @@ namespace DabaTaseApp.Controllers
             return categories.Select(c => new SelectListItem(c, c)).ToList();
         }
 
+        private async Task<IReadOnlyList<SelectListItem>> BuildGroupOptionsAsync()
+        {
+            return await _context.Groups
+                .OrderBy(g => g.GroupName)
+                .Select(g => new SelectListItem(g.GroupName, g.Id.ToString()))
+                .ToListAsync();
+        }
+
+        private async Task<IReadOnlyList<SelectListItem>> BuildUnlinkedStudentOptionsAsync()
+        {
+            return await _context.Students
+                .Where(s => s.ApplicationUserId == null)
+                .OrderBy(s => s.FullName)
+                .Select(s => new SelectListItem($"{s.FullName} ({s.TargetCategory})", s.Id.ToString()))
+                .ToListAsync();
+        }
+
+        private async Task<IReadOnlyList<SelectListItem>> BuildUnlinkedInstructorOptionsAsync()
+        {
+            return await _context.Instructors
+                .Where(i => i.ApplicationUserId == null)
+                .OrderBy(i => i.FullName)
+                .Select(i => new SelectListItem($"{i.FullName} ({i.LicenseSerial})", i.Id.ToString()))
+                .ToListAsync();
+        }
+
         private async Task<string> GetDefaultCategoryAsync()
         {
             return await _context.Categories
@@ -214,16 +314,43 @@ namespace DabaTaseApp.Controllers
 
         private async Task ValidateProfileForNewUserAsync(CreateUserViewModel newUser)
         {
-            if (newUser.Role is AppRoles.Student or AppRoles.Instructor && string.IsNullOrWhiteSpace(newUser.FullName))
+            if (newUser.Role == AppRoles.Admin)
             {
-                ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.FullName)), "Для цієї ролі потрібно вказати ПІБ.");
+                return;
             }
+
+            var linkExisting = newUser.ProfileMode == ProfileModes.LinkExisting;
 
             if (newUser.Role == AppRoles.Student)
             {
+                if (linkExisting)
+                {
+                    var student = newUser.ExistingStudentId.HasValue
+                        ? await _context.Students.FindAsync(newUser.ExistingStudentId.Value)
+                        : null;
+
+                    if (student == null || student.ApplicationUserId != null)
+                    {
+                        ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.ExistingStudentId)), "Оберіть неприв'язану картку учня.");
+                    }
+
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(newUser.FullName))
+                {
+                    ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.FullName)), "Для учня потрібно вказати ПІБ.");
+                }
+
                 if (string.IsNullOrWhiteSpace(newUser.TargetCategory))
                 {
                     ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.TargetCategory)), "Для учня потрібно обрати категорію.");
+                }
+
+                if (newUser.GroupId.HasValue &&
+                    !await _context.Groups.AnyAsync(g => g.Id == newUser.GroupId.Value))
+                {
+                    ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.GroupId)), "Обрана група не існує.");
                 }
                 else if (await _context.Categories.AnyAsync()
                     && !await _context.Categories.AnyAsync(c => c.Name == newUser.TargetCategory))
@@ -240,6 +367,25 @@ namespace DabaTaseApp.Controllers
 
             if (newUser.Role == AppRoles.Instructor)
             {
+                if (linkExisting)
+                {
+                    var instructor = newUser.ExistingInstructorId.HasValue
+                        ? await _context.Instructors.FindAsync(newUser.ExistingInstructorId.Value)
+                        : null;
+
+                    if (instructor == null || instructor.ApplicationUserId != null)
+                    {
+                        ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.ExistingInstructorId)), "Оберіть неприв'язану картку інструктора.");
+                    }
+
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(newUser.FullName))
+                {
+                    ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.FullName)), "Для інструктора потрібно вказати ПІБ.");
+                }
+
                 if (string.IsNullOrWhiteSpace(newUser.PhoneNumber))
                 {
                     ModelState.AddModelError(NewUserField(nameof(CreateUserViewModel.PhoneNumber)), "Для інструктора потрібно вказати телефон.");
@@ -264,6 +410,54 @@ namespace DabaTaseApp.Controllers
             }
         }
 
+        private async Task AttachProfileForNewUserAsync(string userId, CreateUserViewModel newUser)
+        {
+            if (newUser.Role == AppRoles.Student)
+            {
+                if (newUser.ProfileMode == ProfileModes.LinkExisting && newUser.ExistingStudentId.HasValue)
+                {
+                    var student = await _context.Students.FindAsync(newUser.ExistingStudentId.Value);
+                    if (student != null)
+                    {
+                        student.ApplicationUserId = userId;
+                    }
+
+                    return;
+                }
+
+                _context.Students.Add(new Student
+                {
+                    ApplicationUserId = userId,
+                    FullName = newUser.FullName!,
+                    TargetCategory = newUser.TargetCategory ?? await GetDefaultCategoryAsync(),
+                    GroupId = newUser.GroupId,
+                    Balance = 0
+                });
+            }
+
+            if (newUser.Role == AppRoles.Instructor)
+            {
+                if (newUser.ProfileMode == ProfileModes.LinkExisting && newUser.ExistingInstructorId.HasValue)
+                {
+                    var instructor = await _context.Instructors.FindAsync(newUser.ExistingInstructorId.Value);
+                    if (instructor != null)
+                    {
+                        instructor.ApplicationUserId = userId;
+                    }
+
+                    return;
+                }
+
+                _context.Instructors.Add(new Instructor
+                {
+                    ApplicationUserId = userId,
+                    FullName = newUser.FullName!,
+                    PhoneNumber = newUser.PhoneNumber!,
+                    LicenseSerial = newUser.LicenseSerial!
+                });
+            }
+        }
+
         private async Task<List<string>> ReconcileProfilesAfterRoleChangeAsync(
             string userId,
             IEnumerable<string> previousRoles,
@@ -273,7 +467,16 @@ namespace DabaTaseApp.Controllers
 
             if (previousRoles.Contains(AppRoles.Student) && newRole != AppRoles.Student)
             {
-                var note = await DetachStudentProfileAsync(userId);
+                var note = await DetachStudentProfileAsync(userId, save: false);
+                if (note != null)
+                {
+                    notes.Add(note);
+                }
+            }
+
+            if (previousRoles.Contains(AppRoles.Instructor) && newRole != AppRoles.Instructor)
+            {
+                var note = await DetachInstructorProfileAsync(userId, save: false);
                 if (note != null)
                 {
                     notes.Add(note);
@@ -282,19 +485,19 @@ namespace DabaTaseApp.Controllers
 
             if (newRole == AppRoles.Student && !await _context.Students.AnyAsync(s => s.ApplicationUserId == userId))
             {
-                notes.Add("Прив'яжіть акаунт до картки учня на сторінці учнів.");
+                notes.Add("Прив'яжіть акаунт до картки учня.");
             }
 
-            if (newRole == AppRoles.Instructor)
+            if (newRole == AppRoles.Instructor && !await _context.Instructors.AnyAsync(i => i.ApplicationUserId == userId))
             {
-                notes.Add("Картка інструктора створюється окремо; точна прив'язка інструктора до акаунта потребує погодженої зміни БД.");
+                notes.Add("Прив'яжіть акаунт до картки інструктора.");
             }
 
             await _context.SaveChangesAsync();
             return notes;
         }
 
-        private async Task<string?> DetachStudentProfileAsync(string userId)
+        private async Task<string?> DetachStudentProfileAsync(string userId, bool save)
         {
             var student = await _context.Students.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
             if (student == null)
@@ -302,36 +505,51 @@ namespace DabaTaseApp.Controllers
                 return null;
             }
 
-            var hasHistory = student.Balance != 0
-                || student.GroupId != null
-                || await _context.Payments.AnyAsync(p => p.StudentId == student.Id)
-                || await _context.PracticeSessions.AnyAsync(p => p.StudentId == student.Id);
-
-            if (!hasHistory && LooksLikeEmail(student.FullName))
+            student.ApplicationUserId = null;
+            if (save)
             {
-                _context.Students.Remove(student);
-                return "Порожню картку учня з email замість ПІБ видалено.";
+                await _context.SaveChangesAsync();
             }
 
-            student.ApplicationUserId = null;
             return "Картку учня відв'язано від акаунта.";
+        }
+
+        private async Task<string?> DetachInstructorProfileAsync(string userId, bool save)
+        {
+            var instructor = await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
+            if (instructor == null)
+            {
+                return null;
+            }
+
+            instructor.ApplicationUserId = null;
+            if (save)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return "Картку інструктора відв'язано від акаунта.";
         }
 
         private static string BuildProfileStatus(
             string userId,
             IEnumerable<string> roles,
-            IReadOnlyDictionary<string, string> linkedStudents)
+            IReadOnlyDictionary<string, string> linkedStudents,
+            IReadOnlyDictionary<string, string> linkedInstructors,
+            out bool hasLinkedProfile)
         {
+            hasLinkedProfile = false;
+
             if (roles.Contains(AppRoles.Student))
             {
-                return linkedStudents.TryGetValue(userId, out var studentName)
-                    ? $"Учень: {studentName}"
-                    : "Немає картки учня";
+                hasLinkedProfile = linkedStudents.TryGetValue(userId, out var studentName);
+                return hasLinkedProfile ? $"Учень: {studentName}" : "Немає картки учня";
             }
 
             if (roles.Contains(AppRoles.Instructor))
             {
-                return "Роль instructor";
+                hasLinkedProfile = linkedInstructors.TryGetValue(userId, out var instructorName);
+                return hasLinkedProfile ? $"Інструктор: {instructorName}" : "Немає картки інструктора";
             }
 
             return roles.Contains(AppRoles.Admin) ? "Адміністратор" : "Немає профілю";
@@ -352,15 +570,13 @@ namespace DabaTaseApp.Controllers
         {
             newUser.Email = newUser.Email.Trim();
             newUser.Role = NormalizeRole(newUser.Role);
+            newUser.ProfileMode = newUser.ProfileMode == ProfileModes.LinkExisting
+                ? ProfileModes.LinkExisting
+                : ProfileModes.CreateNew;
             newUser.FullName = string.IsNullOrWhiteSpace(newUser.FullName) ? null : newUser.FullName.Trim();
             newUser.TargetCategory = string.IsNullOrWhiteSpace(newUser.TargetCategory) ? null : newUser.TargetCategory.Trim();
             newUser.PhoneNumber = string.IsNullOrWhiteSpace(newUser.PhoneNumber) ? null : newUser.PhoneNumber.Trim();
             newUser.LicenseSerial = string.IsNullOrWhiteSpace(newUser.LicenseSerial) ? null : newUser.LicenseSerial.Trim();
-        }
-
-        private static bool LooksLikeEmail(string value)
-        {
-            return value.Contains('@') && value.Contains('.');
         }
 
         private static string NormalizeRole(string? role)

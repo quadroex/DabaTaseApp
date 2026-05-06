@@ -37,23 +37,30 @@
                                 </a>
                             </li>
 
-                            @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor))
+                            @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor) || User.IsInRole(AppRoles.Student))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link @(currentController == "Students" ? "active" : "")" asp-controller="Students" asp-action="Index">
                                         <i class="bi bi-mortarboard"></i><span>Учні</span>
                                     </a>
                                 </li>
+                            }
+
+                            @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor))
+                            {
                                 <li class="nav-item">
                                     <a class="nav-link @(currentController == "Groups" ? "active" : "")" asp-controller="Groups" asp-action="Index">
                                         <i class="bi bi-diagram-3"></i><span>Групи</span>
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">
-                                        <i class="bi bi-person-badge"></i><span>Інструктори</span>
-                                    </a>
-                                </li>
+                                @if (User.IsInRole(AppRoles.Admin))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link @(currentController == "Instructors" ? "active" : "")" asp-controller="Instructors" asp-action="Index">
+                                            <i class="bi bi-person-badge"></i><span>Інструктори</span>
+                                        </a>
+                                    </li>
+                                }
                                 <li class="nav-item">
                                     <a class="nav-link @(currentController == "Vehicles" ? "active" : "")" asp-controller="Vehicles" asp-action="Index">
                                         <i class="bi bi-car-front"></i><span>Автопарк</span>

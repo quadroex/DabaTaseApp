@@ -1,7 +1,7 @@
 ﻿@model DabaTaseApp.Models.Student
 @{
     ViewData["Title"] = "Картка учня";
-    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
+    var canManage = User.IsInRole(AppRoles.Admin);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">

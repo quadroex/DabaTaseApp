@@ -1,4 +1,5 @@
 using DabaTaseApp.Models;
+using DabaTaseApp.ModelBinding;
 using DabaTaseApp.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -54,7 +55,10 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(AppRoles.Admin));
 });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.ModelBinderProviders.Insert(0, new FlexibleDecimalModelBinderProvider());
+});
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -117,7 +121,8 @@ static async Task SeedIdentityAsync(WebApplication app)
     }
 
     await EnsureUserAsync(userManager, "admin@test.com", "Admin!2026", AppRoles.Admin);
-    await EnsureUserAsync(userManager, "inst@test.com", "Instructor!2026", AppRoles.Instructor);
+    var demoInstructorUser = await EnsureUserAsync(userManager, "inst@test.com", "Instructor!2026", AppRoles.Instructor);
+    await EnsureDemoInstructorAsync(db, demoInstructorUser);
 
     var demoStudentUser = await EnsureUserAsync(userManager, "stud@test.com", "Student!2026", AppRoles.Student);
     await EnsureDemoStudentAsync(db, demoStudentUser);
@@ -189,6 +194,35 @@ static async Task EnsureDemoStudentAsync(Lab1Context db, IdentityUser user)
     await db.SaveChangesAsync();
 }
 
+static async Task EnsureDemoInstructorAsync(Lab1Context db, IdentityUser user)
+{
+    var existingLinkedInstructor = await db.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == user.Id);
+    if (existingLinkedInstructor != null)
+    {
+        return;
+    }
+
+    var existingInstructor = await db.Instructors
+        .FirstOrDefaultAsync(i => i.FullName == "Тестовий інструктор" || i.FullName == user.Email);
+
+    if (existingInstructor == null)
+    {
+        db.Instructors.Add(new Instructor
+        {
+            ApplicationUserId = user.Id,
+            FullName = "Тестовий інструктор",
+            PhoneNumber = "380000000000",
+            LicenseSerial = "DEMO-2026"
+        });
+    }
+    else
+    {
+        existingInstructor.ApplicationUserId = user.Id;
+    }
+
+    await db.SaveChangesAsync();
+}
+
 static async Task ReconcileProfileLinksAsync(Lab1Context db, UserManager<IdentityUser> userManager)
 {
     var linkedStudents = await db.Students
@@ -216,6 +250,21 @@ static async Task ReconcileProfileLinksAsync(Lab1Context db, UserManager<Identit
         {
             student.ApplicationUserId = null;
         }
+    }
+
+    var linkedInstructors = await db.Instructors
+        .Where(i => i.ApplicationUserId != null)
+        .ToListAsync();
+
+    foreach (var instructor in linkedInstructors)
+    {
+        var user = await userManager.FindByIdAsync(instructor.ApplicationUserId!);
+        if (user != null && await userManager.IsInRoleAsync(user, AppRoles.Instructor))
+        {
+            continue;
+        }
+
+        instructor.ApplicationUserId = null;
     }
 
     await db.SaveChangesAsync();

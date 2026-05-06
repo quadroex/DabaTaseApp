@@ -8,14 +8,18 @@
             ? AppRoles.Admin
             : User.IsInRole(AppRoles.Instructor)
                 ? AppRoles.Instructor
-                : AppRoles.Student;
+                : User.IsInRole(AppRoles.Student)
+                    ? AppRoles.Student
+                    : string.Empty;
+        var roleLabel = AppRoleDisplay.Name(role);
+        var roleClass = string.IsNullOrEmpty(role) ? "none" : role;
 
         <li class="nav-item">
             <a class="user-pill" asp-area="Identity" asp-page="/Account/Manage/Index">
                 <span class="user-avatar"><i class="bi bi-person"></i></span>
                 <span class="user-meta">
                     <span>@User.Identity?.Name</span>
-                    <span class="role-chip role-chip-@role">@role</span>
+                    <span class="role-chip role-chip-@roleClass">@roleLabel</span>
                 </span>
             </a>
         </li>
@@ -29,11 +33,6 @@
     }
     else
     {
-        <li class="nav-item">
-            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
-                <i class="bi bi-person-plus"></i><span>Реєстрація</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a class="btn btn-light btn-sm" asp-area="Identity" asp-page="/Account/Login">
                 <i class="bi bi-box-arrow-in-right me-1"></i>Вхід

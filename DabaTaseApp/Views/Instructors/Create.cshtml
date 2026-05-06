@@ -32,6 +32,15 @@
                     <input asp-for="LicenseSerial" class="form-control text-uppercase" placeholder="АВ 123456" />
                     <span asp-validation-for="LicenseSerial" class="text-danger small"></span>
                 </div>
+
+                <div class="form-group mb-4">
+                    <label asp-for="ApplicationUserId" class="form-label text-muted fw-bold">Акаунт інструктора</label>
+                    <select asp-for="ApplicationUserId" class="form-select" asp-items="ViewBag.ApplicationUserId">
+                        <option value="">Не прив'язано</option>
+                    </select>
+                    <span asp-validation-for="ApplicationUserId" class="text-danger small"></span>
+                    <div class="form-text mt-1">Можна обрати лише акаунт із роллю instructor, який ще не прив'язаний до іншого інструктора.</div>
+                </div>
                 
                 <div class="form-group mt-5">
                     <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-check-lg me-2"></i>Зберегти запис</button>

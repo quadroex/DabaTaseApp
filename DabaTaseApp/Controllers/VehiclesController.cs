@@ -154,12 +154,20 @@ namespace DabaTaseApp.Controllers
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var vehicle = await _context.Vehicles.FindAsync(id);
-            if (vehicle != null)
+            if (vehicle == null)
             {
-                _context.Vehicles.Remove(vehicle);
+                return RedirectToAction(nameof(Index));
             }
 
+            if (await _context.PracticeSessions.AnyAsync(p => p.VehiclePlate == id))
+            {
+                TempData["ErrorMessage"] = "Неможливо видалити автомобіль, оскільки він використовується у практичних заняттях.";
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            _context.Vehicles.Remove(vehicle);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Автомобіль видалено.";
             return RedirectToAction(nameof(Index));
         }
 

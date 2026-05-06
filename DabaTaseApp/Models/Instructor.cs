@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
 namespace DabaTaseApp.Models;
@@ -5,6 +6,9 @@ namespace DabaTaseApp.Models;
 public partial class Instructor
 {
     public int Id { get; set; }
+
+    [Display(Name = "Акаунт")]
+    public string? ApplicationUserId { get; set; }
 
     [Display(Name = "ПІБ")]
     [Required(ErrorMessage = "Поле не повинно бути порожнім")]
@@ -17,7 +21,7 @@ public partial class Instructor
     [StringLength(30, ErrorMessage = "Номер телефону надто довгий.")]
     public string PhoneNumber { get; set; } = null!;
 
-    [Display(Name = "Серія/Номер ліцензії")]
+    [Display(Name = "Серія/номер ліцензії")]
     [Required(ErrorMessage = "Поле не повинно бути порожнім")]
     [StringLength(40, MinimumLength = 3, ErrorMessage = "Ліцензія має містити від 3 до 40 символів.")]
     public string LicenseSerial { get; set; } = null!;
@@ -33,4 +37,7 @@ public partial class Instructor
 
     [Display(Name = "Категорії")]
     public virtual ICollection<Category> CategoryNames { get; set; } = new List<Category>();
+
+    [Display(Name = "Акаунт")]
+    public virtual IdentityUser? ApplicationUser { get; set; }
 }

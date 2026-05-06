@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.Collections.Generic;
+using DabaTaseApp.Validation;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DabaTaseApp.Models;
 
@@ -18,8 +17,8 @@ public partial class Student
     public string FullName { get; set; } = null!;
 
     [Display(Name = "Баланс")]
-    [Range(-1000000, 1000000, ErrorMessage = "Баланс має бути в межах від -1 000 000 до 1 000 000 грн.")]
-    public int Balance { get; set; }
+    [DecimalRange(-1000000, 1000000, ErrorMessage = "Баланс має бути в межах від -1 000 000 до 1 000 000 грн.")]
+    public decimal Balance { get; set; }
 
     [Display(Name = "Цільова категорія")]
     [Required(ErrorMessage = "Оберіть цільову категорію.")]

@@ -30,11 +30,18 @@
                 <input asp-for="EndTime" class="form-control" />
                 <span asp-validation-for="EndTime" class="text-danger"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="InstructorId" class="control-label"></label>
-                <select asp-for="InstructorId" class="form-control" asp-items="ViewBag.InstructorId"></select>
-                <span asp-validation-for="InstructorId" class="text-danger"></span>
-            </div>
+            @if (ViewBag.LockInstructor == true)
+            {
+                <input type="hidden" asp-for="InstructorId" />
+            }
+            else
+            {
+                <div class="mb-3">
+                    <label asp-for="InstructorId" class="control-label"></label>
+                    <select asp-for="InstructorId" class="form-control" asp-items="ViewBag.InstructorId"></select>
+                    <span asp-validation-for="InstructorId" class="text-danger"></span>
+                </div>
+            }
             <div class="mb-3">
                 <label asp-for="Location" class="control-label"></label>
                 <input asp-for="Location" class="form-control" />
@@ -56,7 +63,7 @@
                 <span asp-validation-for="GroupId" class="text-danger"></span>
             </div>
             <div class="mb-3">
-                <input type="submit" value="Save" class="btn btn-primary" />
+                <input type="submit" value="Зберегти" class="btn btn-primary" />
             </div>
         </form>
     </div>

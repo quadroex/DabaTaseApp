@@ -1,6 +1,7 @@
 ﻿@model DabaTaseApp.Models.Group
 @{
     ViewData["Title"] = "Деталі групи " + Model.GroupName;
+    var canManage = User.IsInRole(AppRoles.Admin);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -8,14 +9,17 @@
         <h1 class="mb-0 text-primary">@Model.GroupName</h1>
         <p class="text-muted">Період навчання: @Model.StartDate.ToShortDateString() — @Model.EndDate.ToShortDateString()</p>
     </div>
-    <div class="d-flex gap-2">
-        <a asp-action="ExportSingle" asp-route-id="@Model.Id" class="btn btn-success shadow-sm">
-            <i class="bi bi-file-earmark-excel me-2"></i>Експортувати звіт
-        </a>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary shadow-sm">
-            <i class="bi bi-pencil me-2"></i>Редагувати
-        </a>
-    </div>
+    @if (canManage)
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="ExportSingle" asp-route-id="@Model.Id" class="btn btn-success shadow-sm">
+                <i class="bi bi-file-earmark-excel me-2"></i>Експортувати звіт
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-pencil me-2"></i>Редагувати
+            </a>
+        </div>
+    }
 </div>
 
 <div class="row mb-5">
@@ -33,17 +37,20 @@
             </div>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="card-custom h-100 bg-light border-0 p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>Швидкий імпорт учнів у цю групу</h5>
-            <p class="small text-muted">Оберіть .xlsx-файл, щоб миттєво додати учнів до складу цієї групи.</p>
-            <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3">
-                <input type="hidden" name="groupId" value="@Model.Id" />
-                <input type="file" name="fileExcel" class="form-control" accept=".xlsx" required />
-                <button type="submit" class="btn btn-warning px-4 fw-bold">Завантажити</button>
-            </form>
+    @if (canManage)
+    {
+        <div class="col-md-8">
+            <div class="card-custom h-100 bg-light border-0 p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>Швидкий імпорт учнів у цю групу</h5>
+                <p class="small text-muted">Оберіть .xlsx-файл, щоб миттєво додати учнів до складу цієї групи.</p>
+                <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3">
+                    <input type="hidden" name="groupId" value="@Model.Id" />
+                    <input type="file" name="fileExcel" class="form-control" accept=".xlsx" required />
+                    <button type="submit" class="btn btn-warning px-4 fw-bold">Завантажити</button>
+                </form>
+            </div>
         </div>
-    </div>
+    }
 </div>
 
 <div class="card-custom p-0 overflow-hidden">

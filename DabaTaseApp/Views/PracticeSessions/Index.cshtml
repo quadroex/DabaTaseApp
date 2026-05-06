@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Практичні заняття";
     var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
+    var canDelete = User.IsInRole(AppRoles.Admin);
 }
 
 <div class="surface-toolbar">
@@ -49,6 +50,7 @@
                             "Завершено" => "status-done",
                             _ => "status-cancelled"
                         };
+                        var canCancel = canManage && item.Status != "Скасовано" && item.Status != "Завершено";
                         <tr>
                             <td>
                                 <div class="fw-bold">@item.Student?.FullName</div>
@@ -62,12 +64,18 @@
                             <td><span class="status-badge @statusClass">@item.Status</span></td>
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    @if (canManage)
-                                    {
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
-                                    }
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
                                     @if (canManage)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action text-primary" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
+                                    }
+                                    @if (canCancel)
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn-action text-warning" aria-label="Скасувати"><i class="bi bi-x-circle"></i></button>
+                                        </form>
+                                    }
+                                    @if (canDelete)
                                     {
                                         <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action text-danger" aria-label="Видалити"><i class="bi bi-trash3"></i></a>
                                     }

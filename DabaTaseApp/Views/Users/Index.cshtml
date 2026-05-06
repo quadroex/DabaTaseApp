@@ -8,19 +8,9 @@
     <div>
         <p class="eyebrow mb-2">Адміністрування</p>
         <h1 class="mb-0">Користувачі та ролі</h1>
-        <p class="text-muted mb-0">Акаунти, профілі учнів/інструкторів і права доступу.</p>
+        <p class="text-muted mb-0">Акаунти створює адміністратор і прив'язує їх до карток учнів або інструкторів.</p>
     </div>
 </div>
-
-@if (TempData["SuccessMessage"] is string successMessage)
-{
-    <div class="alert alert-success">@successMessage</div>
-}
-
-@if (TempData["ErrorMessage"] is string errorMessage)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
 
 <div class="card-custom">
     <h5 class="mb-3">Створити користувача</h5>
@@ -38,7 +28,7 @@
             <select asp-for="NewUser.Role" class="form-select" id="newUserRole">
                 @foreach (var role in Model.AvailableRoles)
                 {
-                    <option value="@role">@role</option>
+                    <option value="@role">@AppRoleDisplay.Name(role)</option>
                 }
             </select>
             <span asp-validation-for="NewUser.Role" class="text-danger"></span>
@@ -56,28 +46,61 @@
             <span asp-validation-for="NewUser.ConfirmPassword" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-4 profile-field student-field instructor-field">
+        <div class="col-12 col-lg-3 profile-field student-field instructor-field">
+            <label asp-for="NewUser.ProfileMode" class="form-label">Профіль</label>
+            <select asp-for="NewUser.ProfileMode" class="form-select" id="profileMode">
+                <option value="@ProfileModes.CreateNew">Створити нову картку</option>
+                <option value="@ProfileModes.LinkExisting">Прив'язати існуючу</option>
+            </select>
+            <span asp-validation-for="NewUser.ProfileMode" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4 profile-field create-profile-field student-field instructor-field">
             <label asp-for="NewUser.FullName" class="form-label">ПІБ</label>
             <input asp-for="NewUser.FullName" class="form-control" />
             <span asp-validation-for="NewUser.FullName" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field student-field">
+        <div class="col-12 col-lg-3 profile-field create-profile-field student-field">
             <label asp-for="NewUser.TargetCategory" class="form-label">Категорія</label>
             <select asp-for="NewUser.TargetCategory" asp-items="Model.CategoryOptions" class="form-select"></select>
             <span asp-validation-for="NewUser.TargetCategory" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field instructor-field">
+        <div class="col-12 col-lg-3 profile-field create-profile-field student-field">
+            <label asp-for="NewUser.GroupId" class="form-label">Група</label>
+            <select asp-for="NewUser.GroupId" asp-items="Model.GroupOptions" class="form-select">
+                <option value="">Без групи</option>
+            </select>
+            <span asp-validation-for="NewUser.GroupId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4 profile-field link-profile-field student-field">
+            <label asp-for="NewUser.ExistingStudentId" class="form-label">Існуючий учень</label>
+            <select asp-for="NewUser.ExistingStudentId" asp-items="Model.UnlinkedStudentOptions" class="form-select">
+                <option value="">Оберіть учня</option>
+            </select>
+            <span asp-validation-for="NewUser.ExistingStudentId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-3 profile-field create-profile-field instructor-field">
             <label asp-for="NewUser.PhoneNumber" class="form-label">Телефон</label>
             <input asp-for="NewUser.PhoneNumber" class="form-control" />
             <span asp-validation-for="NewUser.PhoneNumber" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field instructor-field">
+        <div class="col-12 col-lg-3 profile-field create-profile-field instructor-field">
             <label asp-for="NewUser.LicenseSerial" class="form-label">Ліцензія</label>
             <input asp-for="NewUser.LicenseSerial" class="form-control text-uppercase" />
             <span asp-validation-for="NewUser.LicenseSerial" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4 profile-field link-profile-field instructor-field">
+            <label asp-for="NewUser.ExistingInstructorId" class="form-label">Існуючий інструктор</label>
+            <select asp-for="NewUser.ExistingInstructorId" asp-items="Model.UnlinkedInstructorOptions" class="form-select">
+                <option value="">Оберіть інструктора</option>
+            </select>
+            <span asp-validation-for="NewUser.ExistingInstructorId" class="text-danger"></span>
         </div>
 
         <div class="col-12 col-lg-2 d-flex align-items-end">
@@ -96,12 +119,15 @@
                     <th>Користувач</th>
                     <th>Поточна роль</th>
                     <th>Профіль</th>
-                    <th class="text-end">Змінити доступ</th>
+                    <th class="text-end">Доступ</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var user in Model.Users)
                 {
+                    var isStudent = user.Roles.Contains(AppRoles.Student);
+                    var isInstructor = user.Roles.Contains(AppRoles.Instructor);
+
                     <tr>
                         <td>
                             <div class="fw-bold">@user.Email</div>
@@ -110,29 +136,59 @@
                         <td>
                             @if (user.Roles.Count == 0)
                             {
-                                <span class="text-muted">Без ролі</span>
+                                <span class="text-muted">без ролі</span>
                             }
                             @foreach (var role in user.Roles)
                             {
-                                <span class="role-chip role-chip-@role">@role</span>
+                                <span class="role-chip role-chip-@role">@AppRoleDisplay.Name(role)</span>
                             }
                         </td>
-                        <td class="text-muted small">@user.ProfileStatus</td>
+                        <td class="small">
+                            <div class="text-muted mb-2">@user.ProfileStatus</div>
+
+                            @if (user.HasLinkedProfile && (isStudent || isInstructor))
+                            {
+                                <form asp-action="UnlinkProfile" method="post">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">Відв'язати</button>
+                                </form>
+                            }
+                            else if (isStudent && Model.UnlinkedStudentOptions.Any())
+                            {
+                                <form asp-action="LinkStudentProfile" method="post" class="d-flex gap-2">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <select name="studentId" class="form-select form-select-sm" asp-items="Model.UnlinkedStudentOptions"></select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Прив'язати</button>
+                                </form>
+                            }
+                            else if (isInstructor && Model.UnlinkedInstructorOptions.Any())
+                            {
+                                <form asp-action="LinkInstructorProfile" method="post" class="d-flex gap-2">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <select name="instructorId" class="form-select form-select-sm" asp-items="Model.UnlinkedInstructorOptions"></select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Прив'язати</button>
+                                </form>
+                            }
+                        </td>
                         <td>
                             @if (user.CanChangeRole)
                             {
                                 <form asp-action="UpdateRole" method="post" class="d-flex justify-content-end gap-2">
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <select name="role" class="form-select form-select-sm role-select">
+                                        @if (string.IsNullOrEmpty(user.SelectedRole))
+                                        {
+                                            <option value="" selected disabled>без ролі</option>
+                                        }
                                         @foreach (var role in Model.AvailableRoles)
                                         {
                                             if (role == user.SelectedRole)
                                             {
-                                                <option value="@role" selected>@role</option>
+                                                <option value="@role" selected>@AppRoleDisplay.Name(role)</option>
                                             }
                                             else
                                             {
-                                                <option value="@role">@role</option>
+                                                <option value="@role">@AppRoleDisplay.Name(role)</option>
                                             }
                                         }
                                     </select>
@@ -157,9 +213,12 @@
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
         const roleSelect = document.getElementById('newUserRole');
+        const profileMode = document.getElementById('profileMode');
         const profileFields = document.querySelectorAll('.profile-field');
         const studentFields = document.querySelectorAll('.student-field');
         const instructorFields = document.querySelectorAll('.instructor-field');
+        const createFields = document.querySelectorAll('.create-profile-field');
+        const linkFields = document.querySelectorAll('.link-profile-field');
 
         function setVisible(fields, visible) {
             fields.forEach(field => field.classList.toggle('d-none', !visible));
@@ -167,12 +226,19 @@
 
         function syncProfileFields() {
             const role = roleSelect.value;
+            const isStudent = role === 'student';
+            const isInstructor = role === 'instructor';
+            const isLink = profileMode.value === 'link';
+
             setVisible(profileFields, false);
-            setVisible(studentFields, role === 'student');
-            setVisible(instructorFields, role === 'instructor');
+            setVisible(studentFields, isStudent);
+            setVisible(instructorFields, isInstructor);
+            setVisible(createFields, (isStudent || isInstructor) && !isLink);
+            setVisible(linkFields, (isStudent || isInstructor) && isLink);
         }
 
         roleSelect.addEventListener('change', syncProfileFields);
+        profileMode.addEventListener('change', syncProfileFields);
         syncProfileFields();
     </script>
 }

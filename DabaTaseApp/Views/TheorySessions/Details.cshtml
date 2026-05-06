@@ -1,7 +1,7 @@
 ﻿@model DabaTaseApp.Models.TheorySession
 
 @{
-    
+    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
 }
 
 <!DOCTYPE html>
@@ -50,7 +50,11 @@
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Редагувати", "Edit", new { /* id = Model.PrimaryKey */ }) |
+    @if (canManage)
+    {
+        <a asp-action="Edit" asp-route-id="@Model?.Id">Редагувати</a>
+        <span>|</span>
+    }
     <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
 </div>
 </body>

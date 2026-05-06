@@ -23,25 +23,39 @@ namespace DabaTaseApp.Controllers
 
         public async Task<IActionResult> Index()
         {
-            if (User.IsInRole(AppRoles.Student))
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var ownStudent = await _context.Students
-                    .Include(s => s.Group)
-                    .Include(s => s.ApplicationUser)
-                    .Where(s => s.ApplicationUserId == userId)
-                    .ToListAsync();
-
-                return View(ownStudent);
-            }
-
-            var students = await _context.Students
+            var query = _context.Students
                 .Include(s => s.Group)
                 .Include(s => s.ApplicationUser)
                 .OrderBy(s => s.FullName)
-                .ToListAsync();
+                .AsQueryable();
 
-            return View(students);
+            if (User.IsInRole(AppRoles.Student))
+            {
+                var student = await GetCurrentStudentAsync();
+                if (student == null)
+                {
+                    TempData["ErrorMessage"] = "Ваш акаунт ще не прив'язаний до картки учня.";
+                    return View(Array.Empty<Student>());
+                }
+
+                query = student.GroupId.HasValue
+                    ? query.Where(s => s.GroupId == student.GroupId)
+                    : query.Where(s => s.Id == student.Id);
+                ViewBag.CurrentStudentId = student.Id;
+            }
+            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
+            {
+                var instructor = await GetCurrentInstructorAsync();
+                if (instructor == null)
+                {
+                    TempData["ErrorMessage"] = "Ваш акаунт ще не прив'язаний до картки інструктора.";
+                    return View(Array.Empty<Student>());
+                }
+
+                query = query.Where(s => s.Group != null && s.Group.TheoryInstructorId == instructor.Id);
+            }
+
+            return View(await query.ToListAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
@@ -61,7 +75,7 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Student) && !CurrentUserOwns(student))
+            if (!await UserCanAccessStudentDetailsAsync(student))
             {
                 return Forbid();
             }
@@ -69,14 +83,14 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         public async Task<IActionResult> Create(int? categoryId)
         {
             await PopulateStudentFormAsync(new Student { GroupId = categoryId });
             return View();
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,ApplicationUserId,FullName,Balance,TargetCategory,GroupId")] Student student)
@@ -88,6 +102,7 @@ namespace DabaTaseApp.Controllers
             {
                 _context.Add(student);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Учня створено.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -95,7 +110,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -113,7 +128,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,ApplicationUserId,FullName,Balance,TargetCategory,GroupId")] Student student)
@@ -143,6 +158,7 @@ namespace DabaTaseApp.Controllers
                     throw;
                 }
 
+                TempData["SuccessMessage"] = "Картку учня оновлено.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -150,7 +166,7 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -171,32 +187,68 @@ namespace DabaTaseApp.Controllers
             return View(student);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var student = await _context.Students.FindAsync(id);
-            if (student != null)
+            if (student == null)
             {
-                try
-                {
-                    _context.Students.Remove(student);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateException)
-                {
-                    TempData["ErrorMessage"] = "Неможливо видалити учня, оскільки у нього є платежі або практичні заняття.";
-                    return RedirectToAction(nameof(Delete), new { id });
-                }
+                return RedirectToAction(nameof(Index));
             }
 
+            if (await _context.Payments.AnyAsync(p => p.StudentId == id)
+                || await _context.PracticeSessions.AnyAsync(p => p.StudentId == id))
+            {
+                TempData["ErrorMessage"] = "Неможливо видалити учня, оскільки в нього є платежі або практичні заняття.";
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Учня видалено.";
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CurrentUserOwns(Student student)
+        private async Task<Student?> GetCurrentStudentAsync()
         {
-            return student.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return string.IsNullOrWhiteSpace(userId)
+                ? null
+                : await _context.Students.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+        }
+
+        private async Task<Instructor?> GetCurrentInstructorAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return string.IsNullOrWhiteSpace(userId)
+                ? null
+                : await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
+        }
+
+        private async Task<bool> UserCanAccessStudentDetailsAsync(Student student)
+        {
+            if (User.IsInRole(AppRoles.Admin))
+            {
+                return true;
+            }
+
+            if (User.IsInRole(AppRoles.Student))
+            {
+                var currentStudent = await GetCurrentStudentAsync();
+                return currentStudent != null && currentStudent.Id == student.Id;
+            }
+
+            if (User.IsInRole(AppRoles.Instructor))
+            {
+                var instructor = await GetCurrentInstructorAsync();
+                return instructor != null
+                    && student.GroupId.HasValue
+                    && await _context.Groups.AnyAsync(g => g.Id == student.GroupId && g.TheoryInstructorId == instructor.Id);
+            }
+
+            return false;
         }
 
         private bool StudentExists(int id)
@@ -288,9 +340,7 @@ namespace DabaTaseApp.Controllers
 
             if (alreadyLinked)
             {
-                ModelState.AddModelError(
-                    nameof(Student.ApplicationUserId),
-                    "Цей акаунт уже прив'язаний до іншого учня.");
+                ModelState.AddModelError(nameof(Student.ApplicationUserId), "Цей акаунт уже прив'язаний до іншого учня.");
             }
         }
     }

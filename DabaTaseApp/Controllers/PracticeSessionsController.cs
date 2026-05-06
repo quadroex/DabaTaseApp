@@ -11,6 +11,13 @@ namespace DabaTaseApp.Controllers
     [Authorize(Roles = AppRoles.AllAuthenticated)]
     public class PracticeSessionsController : Controller
     {
+        private const string Planned = "Заплановано";
+        private const string Ongoing = "Триває";
+        private const string Finished = "Завершено";
+        private const string Cancelled = "Скасовано";
+
+        private static readonly string[] AllowedStatuses = [Planned, Ongoing, Finished, Cancelled];
+
         private readonly Lab1Context _context;
 
         public PracticeSessionsController(Lab1Context context)
@@ -34,10 +41,22 @@ namespace DabaTaseApp.Controllers
                 var student = await GetCurrentStudentAsync();
                 if (student == null)
                 {
+                    TempData["ErrorMessage"] = "Ваш акаунт ще не прив'язаний до картки учня.";
                     return View(Array.Empty<PracticeSession>());
                 }
 
                 query = query.Where(p => p.StudentId == student.Id);
+            }
+            else if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin))
+            {
+                var instructor = await GetCurrentInstructorAsync();
+                if (instructor == null)
+                {
+                    TempData["ErrorMessage"] = "Ваш акаунт ще не прив'язаний до картки інструктора.";
+                    return View(Array.Empty<PracticeSession>());
+                }
+
+                query = query.Where(p => p.InstructorId == instructor.Id);
             }
 
             return View(await query.ToListAsync());
@@ -61,13 +80,9 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole(AppRoles.Student))
+            if (!await UserCanAccessPracticeSessionAsync(practiceSession))
             {
-                var student = await GetCurrentStudentAsync();
-                if (student == null || practiceSession.StudentId != student.Id)
-                {
-                    return Forbid();
-                }
+                return Forbid();
             }
 
             return View(practiceSession);
@@ -76,8 +91,20 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         public async Task<IActionResult> Create()
         {
+            if (User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin)
+                && await GetCurrentInstructorAsync() == null)
+            {
+                TempData["ErrorMessage"] = "Ваш акаунт ще не прив'язаний до картки інструктора.";
+                return RedirectToAction(nameof(Index));
+            }
+
             await PopulateSelectListsAsync();
-            return View();
+            return View(new PracticeSession
+            {
+                StartTime = DateTime.Now.Date.AddHours(10),
+                EndTime = DateTime.Now.Date.AddHours(11),
+                Status = Planned
+            });
         }
 
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
@@ -85,13 +112,15 @@ namespace DabaTaseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
         {
-            ValidateSessionWindow(practiceSession);
             RemoveNavigationModelState();
+            await ApplyInstructorScopeAsync(practiceSession);
+            await ValidateSessionAsync(practiceSession);
 
             if (ModelState.IsValid)
             {
                 _context.Add(practiceSession);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Практичне заняття створено.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -113,6 +142,11 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
+            if (!await UserCanManagePracticeSessionAsync(practiceSession))
+            {
+                return Forbid();
+            }
+
             await PopulateSelectListsAsync(practiceSession);
             return View(practiceSession);
         }
@@ -127,8 +161,20 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            ValidateSessionWindow(practiceSession);
+            var existing = await _context.PracticeSessions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            if (!await UserCanManagePracticeSessionAsync(existing))
+            {
+                return Forbid();
+            }
+
             RemoveNavigationModelState();
+            await ApplyInstructorScopeAsync(practiceSession);
+            await ValidateSessionAsync(practiceSession);
 
             if (ModelState.IsValid)
             {
@@ -147,6 +193,7 @@ namespace DabaTaseApp.Controllers
                     throw;
                 }
 
+                TempData["SuccessMessage"] = "Практичне заняття оновлено.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -155,6 +202,28 @@ namespace DabaTaseApp.Controllers
         }
 
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var practiceSession = await _context.PracticeSessions.FindAsync(id);
+            if (practiceSession == null)
+            {
+                return NotFound();
+            }
+
+            if (!await UserCanManagePracticeSessionAsync(practiceSession))
+            {
+                return Forbid();
+            }
+
+            practiceSession.Status = Cancelled;
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Практичне заняття скасовано.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize(Roles = AppRoles.Admin)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -176,7 +245,7 @@ namespace DabaTaseApp.Controllers
             return View(practiceSession);
         }
 
-        [Authorize(Roles = AppRoles.AdminOrInstructor)]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -185,16 +254,27 @@ namespace DabaTaseApp.Controllers
             if (practiceSession != null)
             {
                 _context.PracticeSessions.Remove(practiceSession);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Практичне заняття видалено.";
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private async Task PopulateSelectListsAsync(PracticeSession? practiceSession = null)
         {
+            var instructorsQuery = _context.Instructors.OrderBy(i => i.FullName).AsQueryable();
+            ViewBag.LockInstructor = User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin);
+
+            if (ViewBag.LockInstructor == true)
+            {
+                var instructor = await GetCurrentInstructorAsync();
+                var instructorId = instructor?.Id ?? 0;
+                instructorsQuery = instructorsQuery.Where(i => i.Id == instructorId);
+            }
+
             ViewData["InstructorId"] = new SelectList(
-                await _context.Instructors.OrderBy(i => i.FullName).ToListAsync(),
+                await instructorsQuery.ToListAsync(),
                 "Id",
                 "FullName",
                 practiceSession?.InstructorId);
@@ -205,31 +285,37 @@ namespace DabaTaseApp.Controllers
                 "FullName",
                 practiceSession?.StudentId);
 
+            var selectedVehicle = practiceSession?.VehiclePlate;
+            var vehiclesQuery = _context.Vehicles.AsQueryable();
+            vehiclesQuery = string.IsNullOrWhiteSpace(selectedVehicle)
+                ? vehiclesQuery.Where(v => v.IsActive)
+                : vehiclesQuery.Where(v => v.IsActive || v.PlateNumber == selectedVehicle);
+
             ViewData["VehiclePlate"] = new SelectList(
-                await _context.Vehicles.OrderBy(v => v.PlateNumber).ToListAsync(),
+                await vehiclesQuery.OrderBy(v => v.PlateNumber).ToListAsync(),
                 "PlateNumber",
                 "PlateNumber",
-                practiceSession?.VehiclePlate);
+                selectedVehicle);
         }
 
         private async Task RefreshSessionStatusesAsync()
         {
             var now = DateTime.Now;
             var sessionsToUpdate = await _context.PracticeSessions
-                .Where(s => s.Status != "Завершено" && s.Status != "Скасовано")
+                .Where(s => s.Status != Finished && s.Status != Cancelled)
                 .ToListAsync();
 
             var isUpdated = false;
             foreach (var session in sessionsToUpdate)
             {
-                if (now >= session.EndTime && session.Status != "Завершено")
+                if (now >= session.EndTime && session.Status != Finished)
                 {
-                    session.Status = "Завершено";
+                    session.Status = Finished;
                     isUpdated = true;
                 }
-                else if (now >= session.StartTime && now < session.EndTime && session.Status != "Триває")
+                else if (now >= session.StartTime && now < session.EndTime && session.Status != Ongoing)
                 {
-                    session.Status = "Триває";
+                    session.Status = Ongoing;
                     isUpdated = true;
                 }
             }
@@ -240,6 +326,121 @@ namespace DabaTaseApp.Controllers
             }
         }
 
+        private async Task ApplyInstructorScopeAsync(PracticeSession practiceSession)
+        {
+            if (!AllowedStatuses.Contains(practiceSession.Status ?? string.Empty))
+            {
+                practiceSession.Status = Planned;
+            }
+
+            practiceSession.VehiclePlate = (practiceSession.VehiclePlate ?? string.Empty).Trim().ToUpperInvariant();
+
+            if (User.IsInRole(AppRoles.Admin))
+            {
+                return;
+            }
+
+            var instructor = await GetCurrentInstructorAsync();
+            if (instructor == null)
+            {
+                ModelState.AddModelError(string.Empty, "Ваш акаунт ще не прив'язаний до картки інструктора.");
+                return;
+            }
+
+            practiceSession.InstructorId = instructor.Id;
+        }
+
+        private async Task ValidateSessionAsync(PracticeSession practiceSession)
+        {
+            if (practiceSession.EndTime <= practiceSession.StartTime)
+            {
+                ModelState.AddModelError(nameof(PracticeSession.EndTime), "Час закінчення повинен бути пізніше за час початку.");
+                return;
+            }
+
+            if (!await _context.Students.AnyAsync(s => s.Id == practiceSession.StudentId))
+            {
+                ModelState.AddModelError(nameof(PracticeSession.StudentId), "Оберіть існуючого учня.");
+            }
+
+            if (!await _context.Instructors.AnyAsync(i => i.Id == practiceSession.InstructorId))
+            {
+                ModelState.AddModelError(nameof(PracticeSession.InstructorId), "Оберіть існуючого інструктора.");
+            }
+
+            if (!await _context.Vehicles.AnyAsync(v => v.PlateNumber == practiceSession.VehiclePlate && v.IsActive))
+            {
+                ModelState.AddModelError(nameof(PracticeSession.VehiclePlate), "Не можна призначити неактивний автомобіль.");
+            }
+
+            var hasStudentConflict = await _context.PracticeSessions.AnyAsync(s =>
+                s.Id != practiceSession.Id
+                && s.Status != Cancelled
+                && s.StudentId == practiceSession.StudentId
+                && s.StartTime < practiceSession.EndTime
+                && practiceSession.StartTime < s.EndTime);
+            if (hasStudentConflict)
+            {
+                ModelState.AddModelError(nameof(PracticeSession.StudentId), "Учень уже має практичне заняття в цей час.");
+            }
+
+            var hasVehicleConflict = await _context.PracticeSessions.AnyAsync(s =>
+                s.Id != practiceSession.Id
+                && s.Status != Cancelled
+                && s.VehiclePlate == practiceSession.VehiclePlate
+                && s.StartTime < practiceSession.EndTime
+                && practiceSession.StartTime < s.EndTime);
+            if (hasVehicleConflict)
+            {
+                ModelState.AddModelError(nameof(PracticeSession.VehiclePlate), "Автомобіль уже зайнятий у цей час.");
+            }
+
+            var hasPracticeInstructorConflict = await _context.PracticeSessions.AnyAsync(s =>
+                s.Id != practiceSession.Id
+                && s.Status != Cancelled
+                && s.InstructorId == practiceSession.InstructorId
+                && s.StartTime < practiceSession.EndTime
+                && practiceSession.StartTime < s.EndTime);
+
+            var hasTheoryInstructorConflict = await _context.TheorySessions.AnyAsync(s =>
+                s.Status != Cancelled
+                && s.InstructorId == practiceSession.InstructorId
+                && s.StartTime < practiceSession.EndTime
+                && practiceSession.StartTime < s.EndTime);
+
+            if (hasPracticeInstructorConflict || hasTheoryInstructorConflict)
+            {
+                ModelState.AddModelError(nameof(PracticeSession.InstructorId), "Інструктор уже має заняття в цей час.");
+            }
+        }
+
+        private async Task<bool> UserCanAccessPracticeSessionAsync(PracticeSession practiceSession)
+        {
+            if (User.IsInRole(AppRoles.Admin))
+            {
+                return true;
+            }
+
+            if (User.IsInRole(AppRoles.Student))
+            {
+                var student = await GetCurrentStudentAsync();
+                return student != null && practiceSession.StudentId == student.Id;
+            }
+
+            return await UserCanManagePracticeSessionAsync(practiceSession);
+        }
+
+        private async Task<bool> UserCanManagePracticeSessionAsync(PracticeSession practiceSession)
+        {
+            if (User.IsInRole(AppRoles.Admin))
+            {
+                return true;
+            }
+
+            var instructor = await GetCurrentInstructorAsync();
+            return instructor != null && practiceSession.InstructorId == instructor.Id;
+        }
+
         private async Task<Student?> GetCurrentStudentAsync()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -248,12 +449,12 @@ namespace DabaTaseApp.Controllers
                 : await _context.Students.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
         }
 
-        private void ValidateSessionWindow(PracticeSession practiceSession)
+        private async Task<Instructor?> GetCurrentInstructorAsync()
         {
-            if (practiceSession.EndTime <= practiceSession.StartTime)
-            {
-                ModelState.AddModelError(nameof(PracticeSession.EndTime), "Час закінчення повинен бути пізніше за час початку.");
-            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return string.IsNullOrWhiteSpace(userId)
+                ? null
+                : await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
         }
 
         private void RemoveNavigationModelState()

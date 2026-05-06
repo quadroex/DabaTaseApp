@@ -41,35 +41,3 @@ public partial class Group : IValidatableObject
         }
     }
 }
-
-//using System.ComponentModel.DataAnnotations;
-
-//namespace DabaTaseApp.Models;
-
-//public partial class Group
-//{
-//    public int Id { get; set; }
-
-//    [Display(Name = "Назва групи")]
-//    public string GroupName { get; set; } = null!;
-
-//    [Display(Name = "Дата початку")]
-//    [DataType(DataType.Date)]
-//    public DateOnly StartDate { get; set; }
-
-//    [Display(Name = "Дата закінчення")]
-//    [DataType(DataType.Date)]
-//    public DateOnly EndDate { get; set; }
-
-//    [Display(Name = "Інструктор з теорії")]
-//    public int TheoryInstructorId { get; set; }
-
-//    [Display(Name = "Учні")]
-//    public virtual ICollection<Student> Students { get; set; } = new List<Student>();
-
-//    [Display(Name = "Інструктор з теорії")]
-//    public virtual Instructor TheoryInstructor { get; set; } = null!;
-
-//    [Display(Name = "Теоретичні заняття")]
-//    public virtual ICollection<TheorySession> TheorySessions { get; set; } = new List<TheorySession>();
-//}

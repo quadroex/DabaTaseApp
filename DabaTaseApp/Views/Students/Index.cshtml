@@ -2,7 +2,9 @@
 
 @{
     ViewData["Title"] = "Учні";
-    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
+    var canManage = User.IsInRole(AppRoles.Admin);
+    var isInstructor = User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin);
+    var currentStudentId = ViewBag.CurrentStudentId as int?;
 }
 
 <div class="surface-toolbar">
@@ -48,11 +50,12 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
+                        var canViewDetails = canManage || isInstructor || currentStudentId == item.Id;
                         <tr>
                             <td class="fw-bold">@item.FullName</td>
                             <td>
                                 <span class="fw-bold text-@(item.Balance < 0 ? "danger" : "success")">
-                                    @item.Balance.ToString("N0") ₴
+                                    @item.Balance.ToString("N2") ₴
                                 </span>
                             </td>
                             <td><span class="status-badge status-planned">@item.TargetCategory</span></td>
@@ -63,13 +66,13 @@
                             }
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    @if (canManage)
+                                    @if (canViewDetails)
                                     {
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn-action text-info" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
                                     }
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
                                     @if (canManage)
                                     {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action text-primary" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
                                         <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action text-danger" aria-label="Видалити"><i class="bi bi-trash3"></i></a>
                                     }
                                 </div>

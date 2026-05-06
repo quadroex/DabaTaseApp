@@ -29,10 +29,20 @@ namespace DabaTaseApp.Controllers
 
             if (User.IsInRole(AppRoles.Instructor))
             {
-                ViewBag.TotalStudents = await _context.Students.CountAsync();
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var instructor = await _context.Instructors.FirstOrDefaultAsync(i => i.ApplicationUserId == userId);
+
+                ViewBag.InstructorProfileMissing = instructor == null;
+                ViewBag.TotalStudents = instructor == null
+                    ? 0
+                    : await _context.Students.CountAsync(s => s.Group != null && s.Group.TheoryInstructorId == instructor.Id);
                 ViewBag.ActiveVehicles = await _context.Vehicles.CountAsync(v => v.IsActive);
-                ViewBag.UpcomingTheorySessions = await _context.TheorySessions.CountAsync(s => s.StartTime >= DateTime.Now);
-                ViewBag.UpcomingPracticeSessions = await _context.PracticeSessions.CountAsync(s => s.StartTime >= DateTime.Now);
+                ViewBag.UpcomingTheorySessions = instructor == null
+                    ? 0
+                    : await _context.TheorySessions.CountAsync(s => s.StartTime >= DateTime.Now && s.Group.TheoryInstructorId == instructor.Id);
+                ViewBag.UpcomingPracticeSessions = instructor == null
+                    ? 0
+                    : await _context.PracticeSessions.CountAsync(s => s.StartTime >= DateTime.Now && s.InstructorId == instructor.Id);
             }
 
             if (User.IsInRole(AppRoles.Student))

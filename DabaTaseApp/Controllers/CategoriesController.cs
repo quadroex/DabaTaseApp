@@ -105,9 +105,24 @@ namespace DabaTaseApp.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var category = await _context.Categories.FindAsync(id);
-            if (category != null) _context.Categories.Remove(category);
+            if (category == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var isUsedByStudents = await _context.Students.AnyAsync(s => s.TargetCategory == category.Name);
+            var isUsedByInstructors = await _context.Instructors
+                .AnyAsync(i => i.CategoryNames.Any(c => c.Id == id));
+            if (isUsedByStudents || isUsedByInstructors)
+            {
+                TempData["ErrorMessage"] = "Неможливо видалити категорію, оскільки вона використовується учнями або інструкторами.";
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+
+            _context.Categories.Remove(category);
 
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Категорію видалено.";
             return RedirectToAction(nameof(Index));
         }
 
