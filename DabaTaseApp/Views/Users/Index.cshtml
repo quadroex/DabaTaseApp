@@ -46,7 +46,7 @@
             <span asp-validation-for="NewUser.ConfirmPassword" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field student-field instructor-field">
+        <div class="col-12 col-lg-3 d-none profile-mode-field">
             <label asp-for="NewUser.ProfileMode" class="form-label">Профіль</label>
             <select asp-for="NewUser.ProfileMode" class="form-select" id="profileMode">
                 <option value="@ProfileModes.CreateNew">Створити нову картку</option>
@@ -55,19 +55,19 @@
             <span asp-validation-for="NewUser.ProfileMode" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-4 profile-field create-profile-field student-field instructor-field">
+        <div class="col-12 col-lg-4 d-none student-create-field instructor-create-field">
             <label asp-for="NewUser.FullName" class="form-label">ПІБ</label>
             <input asp-for="NewUser.FullName" class="form-control" />
             <span asp-validation-for="NewUser.FullName" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field create-profile-field student-field">
+        <div class="col-12 col-lg-3 d-none student-create-field">
             <label asp-for="NewUser.TargetCategory" class="form-label">Категорія</label>
             <select asp-for="NewUser.TargetCategory" asp-items="Model.CategoryOptions" class="form-select"></select>
             <span asp-validation-for="NewUser.TargetCategory" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field create-profile-field student-field">
+        <div class="col-12 col-lg-3 d-none student-create-field">
             <label asp-for="NewUser.GroupId" class="form-label">Група</label>
             <select asp-for="NewUser.GroupId" asp-items="Model.GroupOptions" class="form-select">
                 <option value="">Без групи</option>
@@ -75,7 +75,7 @@
             <span asp-validation-for="NewUser.GroupId" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-4 profile-field link-profile-field student-field">
+        <div class="col-12 col-lg-4 d-none student-link-field">
             <label asp-for="NewUser.ExistingStudentId" class="form-label">Існуючий учень</label>
             <select asp-for="NewUser.ExistingStudentId" asp-items="Model.UnlinkedStudentOptions" class="form-select">
                 <option value="">Оберіть учня</option>
@@ -83,19 +83,19 @@
             <span asp-validation-for="NewUser.ExistingStudentId" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field create-profile-field instructor-field">
+        <div class="col-12 col-lg-3 d-none instructor-create-field">
             <label asp-for="NewUser.PhoneNumber" class="form-label">Телефон</label>
             <input asp-for="NewUser.PhoneNumber" class="form-control" />
             <span asp-validation-for="NewUser.PhoneNumber" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-3 profile-field create-profile-field instructor-field">
+        <div class="col-12 col-lg-3 d-none instructor-create-field">
             <label asp-for="NewUser.LicenseSerial" class="form-label">Ліцензія</label>
             <input asp-for="NewUser.LicenseSerial" class="form-control text-uppercase" />
             <span asp-validation-for="NewUser.LicenseSerial" class="text-danger"></span>
         </div>
 
-        <div class="col-12 col-lg-4 profile-field link-profile-field instructor-field">
+        <div class="col-12 col-lg-4 d-none instructor-link-field">
             <label asp-for="NewUser.ExistingInstructorId" class="form-label">Існуючий інструктор</label>
             <select asp-for="NewUser.ExistingInstructorId" asp-items="Model.UnlinkedInstructorOptions" class="form-select">
                 <option value="">Оберіть інструктора</option>
@@ -213,32 +213,30 @@
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
         const roleSelect = document.getElementById('newUserRole');
-        const profileMode = document.getElementById('profileMode');
-        const profileFields = document.querySelectorAll('.profile-field');
-        const studentFields = document.querySelectorAll('.student-field');
-        const instructorFields = document.querySelectorAll('.instructor-field');
-        const createFields = document.querySelectorAll('.create-profile-field');
-        const linkFields = document.querySelectorAll('.link-profile-field');
+        const profileModeSelect = document.getElementById('profileMode');
 
-        function setVisible(fields, visible) {
-            fields.forEach(field => field.classList.toggle('d-none', !visible));
+        function setVisible(selector, visible) {
+            document.querySelectorAll(selector).forEach(el => el.classList.toggle('d-none', !visible));
         }
 
         function syncProfileFields() {
             const role = roleSelect.value;
             const isStudent = role === 'student';
             const isInstructor = role === 'instructor';
-            const isLink = profileMode.value === 'link';
+            const isLink = profileModeSelect.value === 'link';
 
-            setVisible(profileFields, false);
-            setVisible(studentFields, isStudent);
-            setVisible(instructorFields, isInstructor);
-            setVisible(createFields, (isStudent || isInstructor) && !isLink);
-            setVisible(linkFields, (isStudent || isInstructor) && isLink);
+            setVisible('.profile-mode-field', isStudent || isInstructor);
+            setVisible('.student-create-field', isStudent && !isLink);
+            setVisible('.student-link-field', isStudent && isLink);
+            setVisible('.instructor-create-field', isInstructor && !isLink);
+            setVisible('.instructor-link-field', isInstructor && isLink);
         }
 
-        roleSelect.addEventListener('change', syncProfileFields);
-        profileMode.addEventListener('change', syncProfileFields);
+        roleSelect.addEventListener('change', function () {
+            profileModeSelect.value = 'create';
+            syncProfileFields();
+        });
+        profileModeSelect.addEventListener('change', syncProfileFields);
         syncProfileFields();
     </script>
 }

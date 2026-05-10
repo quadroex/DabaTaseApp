@@ -1,77 +1,71 @@
-﻿@model DabaTaseApp.Models.TheorySession
+@model DabaTaseApp.Models.TheorySession
 
 @{
-    
+    ViewData["Title"] = "Нове теоретичне заняття";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Create</title>
-</head>
-<body>
-
-<h4>Теоретичні заняття</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="mb-3">
-                <label asp-for="StartTime" class="control-label"></label>
-                <input asp-for="StartTime" class="form-control" />
-                <span asp-validation-for="StartTime" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="EndTime" class="control-label"></label>
-                <input asp-for="EndTime" class="form-control" />
-                <span asp-validation-for="EndTime" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Location" class="control-label"></label>
-                <input asp-for="Location" class="form-control" />
-                <span asp-validation-for="Location" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Status" class="control-label"></label>
-                    <select asp-for="Status" class="form-control">
-                        <option value="Заплановано">Заплановано</option>
-                        <option value="Триває">Триває</option>
-                        <option value="Завершено">Завершено</option>
-                        <option value="Скасовано">Скасовано</option>
-                    </select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            @if (ViewBag.LockInstructor == true)
-            {
-                <input type="hidden" asp-for="InstructorId" />
-            }
-            else
-            {
-                <div class="mb-3">
-                    <label asp-for="InstructorId" class="control-label"></label>
-                    <select asp-for="InstructorId" class="form-control" asp-items="ViewBag.InstructorId"></select>
-                </div>
-            }
-            <div class="mb-3">
-                <label asp-for="GroupId" class="control-label"></label>
-                <select asp-for="GroupId" class ="form-control" asp-items="ViewBag.GroupId"></select>
-            </div>
-            <div class="mb-3">
-                <input type="submit" value="Створити" class="btn btn-primary" />
-            </div>
-        </form>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Теорія</p>
+        <h1 class="mb-0">Нове теоретичне заняття</h1>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
+<div class="card-custom">
+    <form asp-action="Create" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger col-12"></div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="StartTime" class="form-label">Час початку</label>
+            <input asp-for="StartTime" class="form-control" type="datetime-local" />
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="EndTime" class="form-label">Час завершення</label>
+            <input asp-for="EndTime" class="form-control" type="datetime-local" />
+            <span asp-validation-for="EndTime" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="GroupId" class="form-label">Група</label>
+            <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
+                <option value="">Оберіть групу</option>
+            </select>
+            <span asp-validation-for="GroupId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <label asp-for="Location" class="form-label">Аудиторія</label>
+            <input asp-for="Location" class="form-control" />
+            <span asp-validation-for="Location" class="text-danger"></span>
+        </div>
+
+        @if (isAdmin)
+        {
+            <div class="col-12 col-lg-6">
+                <label asp-for="InstructorId" class="form-label">Інструктор</label>
+                <select asp-for="InstructorId" class="form-select" asp-items="ViewBag.InstructorId">
+                    <option value="">Оберіть інструктора</option>
+                </select>
+                <span asp-validation-for="InstructorId" class="text-danger"></span>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="InstructorId" />
+        }
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2 me-2"></i>Створити
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
-</body>
-</html>

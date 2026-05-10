@@ -80,6 +80,7 @@ namespace DabaTaseApp.Controllers
                 return Forbid();
             }
 
+            ViewBag.ShowBalance = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Student);
             return View(student);
         }
 

@@ -118,8 +118,8 @@ namespace DabaTaseApp.Controllers
                     worksheet.Cell(currentRow, 2).Value = group.StartDate.ToString("dd.MM.yyyy");
                     worksheet.Cell(currentRow, 3).Value = group.EndDate.ToString("dd.MM.yyyy");
                     worksheet.Cell(currentRow, 4).Value = group.TheoryInstructor?.FullName ?? "Не призначено";
-                    worksheet.Cell(currentRow, 5).Value = "— БЕЗ УЧНІВ —";
-                    worksheet.Cell(currentRow, 8).Value = "—";
+                    worksheet.Cell(currentRow, 5).Value = "БЕЗ УЧНІВ";
+                    worksheet.Cell(currentRow, 8).Value = "-";
                 }
             }
 

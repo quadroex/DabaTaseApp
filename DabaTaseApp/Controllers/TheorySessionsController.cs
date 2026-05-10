@@ -108,7 +108,7 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
+        public async Task<IActionResult> Create([Bind("StartTime,InstructorId,GroupId,Location,EndTime")] TheorySession theorySession)
         {
             RemoveNavigationModelState();
             await ApplyInstructorScopeAsync(theorySession);
@@ -116,6 +116,7 @@ namespace DabaTaseApp.Controllers
 
             if (ModelState.IsValid)
             {
+                theorySession.Status = ComputeStatus(theorySession.StartTime, theorySession.EndTime);
                 _context.Add(theorySession);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Теоретичне заняття створено.";
@@ -136,6 +137,7 @@ namespace DabaTaseApp.Controllers
 
             var theorySession = await _context.TheorySessions
                 .Include(t => t.Group)
+                .Include(t => t.Instructor)
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (theorySession == null)
             {
@@ -154,16 +156,10 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,StartTime,InstructorId,GroupId,Location,EndTime,Status")] TheorySession theorySession)
+        public async Task<IActionResult> Edit(int id, [Bind("StartTime,EndTime,Location")] TheorySession formData)
         {
-            if (id != theorySession.Id)
-            {
-                return NotFound();
-            }
-
             var existing = await _context.TheorySessions
                 .Include(t => t.Group)
-                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (existing == null)
             {
@@ -175,20 +171,29 @@ namespace DabaTaseApp.Controllers
                 return Forbid();
             }
 
+            existing.StartTime = formData.StartTime;
+            existing.EndTime = formData.EndTime;
+            existing.Location = (formData.Location ?? string.Empty).Trim();
+
             RemoveNavigationModelState();
-            await ApplyInstructorScopeAsync(theorySession);
-            await ValidateSessionAsync(theorySession);
+            ModelState.Remove(nameof(TheorySession.Id));
+
+            await ValidateSessionAsync(existing);
 
             if (ModelState.IsValid)
             {
+                if (existing.Status != Cancelled)
+                {
+                    existing.Status = ComputeStatus(existing.StartTime, existing.EndTime);
+                }
+
                 try
                 {
-                    _context.Update(theorySession);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TheorySessionExists(theorySession.Id))
+                    if (!TheorySessionExists(id))
                     {
                         return NotFound();
                     }
@@ -200,8 +205,8 @@ namespace DabaTaseApp.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await PopulateSelectListsAsync(theorySession);
-            return View(theorySession);
+            await PopulateSelectListsAsync(existing);
+            return View(existing);
         }
 
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
@@ -294,22 +299,17 @@ namespace DabaTaseApp.Controllers
 
         private async Task RefreshSessionStatusesAsync()
         {
-            var now = DateTime.Now;
             var sessionsToUpdate = await _context.TheorySessions
-                .Where(s => s.Status != Finished && s.Status != Cancelled)
+                .Where(s => s.Status != Cancelled)
                 .ToListAsync();
 
             var isUpdated = false;
             foreach (var session in sessionsToUpdate)
             {
-                if (now >= session.EndTime && session.Status != Finished)
+                var expected = ComputeStatus(session.StartTime, session.EndTime);
+                if (session.Status != expected)
                 {
-                    session.Status = Finished;
-                    isUpdated = true;
-                }
-                else if (now >= session.StartTime && now < session.EndTime && session.Status != Ongoing)
-                {
-                    session.Status = Ongoing;
+                    session.Status = expected;
                     isUpdated = true;
                 }
             }
@@ -320,13 +320,16 @@ namespace DabaTaseApp.Controllers
             }
         }
 
+        private static string ComputeStatus(DateTime start, DateTime end)
+        {
+            var now = DateTime.Now;
+            if (now >= end) return Finished;
+            if (now >= start) return Ongoing;
+            return Planned;
+        }
+
         private async Task ApplyInstructorScopeAsync(TheorySession theorySession)
         {
-            if (!AllowedStatuses.Contains(theorySession.Status ?? string.Empty))
-            {
-                theorySession.Status = Planned;
-            }
-
             theorySession.Location = (theorySession.Location ?? string.Empty).Trim();
 
             if (User.IsInRole(AppRoles.Admin))

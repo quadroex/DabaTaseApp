@@ -48,7 +48,7 @@
                         <tr>
                             <td class="text-muted">@item.PaymentDate.ToString("dd.MM.yyyy HH:mm")</td>
                             <td class="fw-bold">@item.Student?.FullName</td>
-                            <td><span class="status-badge status-done">+ @item.Amount.ToString("N0") ₴</span></td>
+                            <td><span class="status-badge status-done">+ @item.Amount.ToString("N2") ₴</span></td>
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
                                     @if (isAdmin)

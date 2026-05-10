@@ -22,10 +22,10 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
         options.User.RequireUniqueEmail = true;
 
         options.Password.RequireDigit = true;
-        options.Password.RequiredLength = 8;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireNonAlphanumeric = true;
-        options.Password.RequireUppercase = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
 
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
         options.Lockout.MaxFailedAccessAttempts = 5;

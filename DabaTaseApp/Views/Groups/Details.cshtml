@@ -63,7 +63,10 @@
             <tr>
                 <th class="ps-4">ПІБ Учня</th>
                 <th>Категорія</th>
-                <th>Баланс</th>
+                @if (canManage)
+                {
+                    <th>Баланс</th>
+                }
                 <th class="text-end pe-4">Дії</th>
             </tr>
         </thead>
@@ -73,7 +76,10 @@
                 <tr>
                     <td class="ps-4 fw-bold">@s.FullName</td>
                     <td><span class="badge bg-light text-dark border">@s.TargetCategory</span></td>
-                    <td class="text-@(s.Balance < 0 ? "danger" : "success") fw-bold">@s.Balance.ToString("N2") ₴</td>
+                    @if (canManage)
+                    {
+                        <td class="text-@(s.Balance < 0 ? "danger" : "success") fw-bold">@s.Balance.ToString("N2") ₴</td>
+                    }
                     <td class="text-end pe-4">
                         <a asp-controller="Students" asp-action="Details" asp-route-id="@s.Id" class="btn-action"><i class="bi bi-eye"></i></a>
                     </td>

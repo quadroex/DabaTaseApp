@@ -4,6 +4,7 @@
     ViewData["Title"] = "Практичні заняття";
     var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
     var canDelete = User.IsInRole(AppRoles.Admin);
+    var showInstructorName = !User.IsInRole(AppRoles.Instructor) || User.IsInRole(AppRoles.Admin);
 }
 
 <div class="surface-toolbar">
@@ -54,7 +55,10 @@
                         <tr>
                             <td>
                                 <div class="fw-bold">@item.Student?.FullName</div>
-                                <div class="small text-muted">@item.Instructor?.FullName</div>
+                                @if (showInstructorName)
+                                {
+                                    <div class="small text-muted">@item.Instructor?.FullName</div>
+                                }
                             </td>
                             <td><span class="status-badge status-planned">@item.VehiclePlate</span></td>
                             <td>

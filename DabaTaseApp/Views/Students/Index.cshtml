@@ -37,7 +37,10 @@
                 <thead>
                     <tr>
                         <th>Учень</th>
-                        <th>Баланс</th>
+                        @if (canManage)
+                        {
+                            <th>Баланс</th>
+                        }
                         <th>Категорія</th>
                         <th>Група</th>
                         @if (canManage)
@@ -53,11 +56,14 @@
                         var canViewDetails = canManage || isInstructor || currentStudentId == item.Id;
                         <tr>
                             <td class="fw-bold">@item.FullName</td>
-                            <td>
-                                <span class="fw-bold text-@(item.Balance < 0 ? "danger" : "success")">
-                                    @item.Balance.ToString("N2") ₴
-                                </span>
-                            </td>
+                            @if (canManage)
+                            {
+                                <td>
+                                    <span class="fw-bold text-@(item.Balance < 0 ? "danger" : "success")">
+                                        @item.Balance.ToString("N2") ₴
+                                    </span>
+                                </td>
+                            }
                             <td><span class="status-badge status-planned">@item.TargetCategory</span></td>
                             <td>@(item.Group?.GroupName ?? "Без групи")</td>
                             @if (canManage)

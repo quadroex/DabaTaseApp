@@ -110,7 +110,7 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
+        public async Task<IActionResult> Create([Bind("StudentId,InstructorId,VehiclePlate,StartTime,EndTime")] PracticeSession practiceSession)
         {
             RemoveNavigationModelState();
             await ApplyInstructorScopeAsync(practiceSession);
@@ -118,6 +118,7 @@ namespace DabaTaseApp.Controllers
 
             if (ModelState.IsValid)
             {
+                practiceSession.Status = ComputeStatus(practiceSession.StartTime, practiceSession.EndTime);
                 _context.Add(practiceSession);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Практичне заняття створено.";
@@ -136,7 +137,10 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
-            var practiceSession = await _context.PracticeSessions.FindAsync(id);
+            var practiceSession = await _context.PracticeSessions
+                .Include(p => p.Student)
+                .Include(p => p.Instructor)
+                .FirstOrDefaultAsync(p => p.Id == id);
             if (practiceSession == null)
             {
                 return NotFound();
@@ -154,14 +158,9 @@ namespace DabaTaseApp.Controllers
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,StudentId,InstructorId,VehiclePlate,StartTime,EndTime,Status")] PracticeSession practiceSession)
+        public async Task<IActionResult> Edit(int id, [Bind("StartTime,EndTime,VehiclePlate")] PracticeSession formData)
         {
-            if (id != practiceSession.Id)
-            {
-                return NotFound();
-            }
-
-            var existing = await _context.PracticeSessions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            var existing = await _context.PracticeSessions.FindAsync(id);
             if (existing == null)
             {
                 return NotFound();
@@ -172,20 +171,29 @@ namespace DabaTaseApp.Controllers
                 return Forbid();
             }
 
+            existing.StartTime = formData.StartTime;
+            existing.EndTime = formData.EndTime;
+            existing.VehiclePlate = (formData.VehiclePlate ?? string.Empty).Trim().ToUpperInvariant();
+
             RemoveNavigationModelState();
-            await ApplyInstructorScopeAsync(practiceSession);
-            await ValidateSessionAsync(practiceSession);
+            ModelState.Remove(nameof(PracticeSession.Id));
+
+            await ValidateSessionAsync(existing);
 
             if (ModelState.IsValid)
             {
+                if (existing.Status != Cancelled)
+                {
+                    existing.Status = ComputeStatus(existing.StartTime, existing.EndTime);
+                }
+
                 try
                 {
-                    _context.Update(practiceSession);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!PracticeSessionExists(practiceSession.Id))
+                    if (!PracticeSessionExists(id))
                     {
                         return NotFound();
                     }
@@ -197,8 +205,8 @@ namespace DabaTaseApp.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await PopulateSelectListsAsync(practiceSession);
-            return View(practiceSession);
+            await PopulateSelectListsAsync(existing);
+            return View(existing);
         }
 
         [Authorize(Roles = AppRoles.AdminOrInstructor)]
@@ -302,20 +310,16 @@ namespace DabaTaseApp.Controllers
         {
             var now = DateTime.Now;
             var sessionsToUpdate = await _context.PracticeSessions
-                .Where(s => s.Status != Finished && s.Status != Cancelled)
+                .Where(s => s.Status != Cancelled)
                 .ToListAsync();
 
             var isUpdated = false;
             foreach (var session in sessionsToUpdate)
             {
-                if (now >= session.EndTime && session.Status != Finished)
+                var expected = ComputeStatus(session.StartTime, session.EndTime);
+                if (session.Status != expected)
                 {
-                    session.Status = Finished;
-                    isUpdated = true;
-                }
-                else if (now >= session.StartTime && now < session.EndTime && session.Status != Ongoing)
-                {
-                    session.Status = Ongoing;
+                    session.Status = expected;
                     isUpdated = true;
                 }
             }
@@ -326,13 +330,16 @@ namespace DabaTaseApp.Controllers
             }
         }
 
+        private static string ComputeStatus(DateTime start, DateTime end)
+        {
+            var now = DateTime.Now;
+            if (now >= end) return Finished;
+            if (now >= start) return Ongoing;
+            return Planned;
+        }
+
         private async Task ApplyInstructorScopeAsync(PracticeSession practiceSession)
         {
-            if (!AllowedStatuses.Contains(practiceSession.Status ?? string.Empty))
-            {
-                practiceSession.Status = Planned;
-            }
-
             practiceSession.VehiclePlate = (practiceSession.VehiclePlate ?? string.Empty).Trim().ToUpperInvariant();
 
             if (User.IsInRole(AppRoles.Admin))

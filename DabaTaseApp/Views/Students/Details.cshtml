@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Картка учня";
     var canManage = User.IsInRole(AppRoles.Admin);
+    var showBalance = ViewBag.ShowBalance as bool? ?? false;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -25,10 +26,13 @@
                 <dt class="col-sm-4 text-muted mb-3">Навчальна група</dt>
                 <dd class="col-sm-8 mb-3 fw-bold text-primary">@(Model.Group?.GroupName ?? "Не призначено")</dd>
 
-                <dt class="col-sm-4 text-muted">Поточний баланс</dt>
-                <dd class="col-sm-8 fs-5 fw-bold text-@(Model.Balance < 0 ? "danger" : "success")">
-                    @Model.Balance.ToString("N2") ₴
-                </dd>
+                @if (showBalance)
+                {
+                    <dt class="col-sm-4 text-muted">Поточний баланс</dt>
+                    <dd class="col-sm-8 fs-5 fw-bold text-@(Model.Balance < 0 ? "danger" : "success")">
+                        @Model.Balance.ToString("N2") ₴
+                    </dd>
+                }
                 @if (canManage)
                 {
                     <dt class="col-sm-4 text-muted">Акаунт</dt>

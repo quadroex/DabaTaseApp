@@ -254,11 +254,12 @@ namespace DabaTaseApp.Controllers
                 return View(model);
             }
 
-            student.Balance += model.Amount;
+            var amount = model.Amount!.Value;
+            student.Balance += amount;
             _context.Payments.Add(new Payment
             {
                 StudentId = student.Id,
-                Amount = model.Amount,
+                Amount = amount,
                 PaymentDate = DateTime.Now
             });
 
