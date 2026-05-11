@@ -1,5 +1,4 @@
 @{
-    ViewData["Title"] = "Панель керування";
     var isSignedIn = User.Identity?.IsAuthenticated ?? false;
     var isAdmin = User.IsInRole(AppRoles.Admin);
     var isInstructor = User.IsInRole(AppRoles.Instructor);
@@ -7,32 +6,46 @@
     var student = ViewBag.Student as Student;
     var nextPractice = ViewBag.NextPracticeSession as PracticeSession;
     var nextTheory = ViewBag.NextTheorySession as TheorySession;
+
+    if (isSignedIn)
+    {
+        ViewData["Title"] = "Панель керування";
+    }
+    else
+    {
+        ViewData["Title"] = "DriveForce";
+        ViewData["HidePageHeader"] = true;
+    }
 }
 
 @if (!isSignedIn)
 {
-    <div class="hero-panel">
-        <section class="card-custom hero-copy">
-            <p class="eyebrow">DriveForce</p>
-            <h1 class="display-5 mb-3">Панель керування автошколою</h1>
-            <p class="text-muted fs-5 mb-4">Розклад занять, учні, автопарк, оплати та доступи в одному робочому просторі.</p>
-            <div class="d-flex flex-wrap gap-2">
-                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
-                </a>
+    <div class="anonymous-home">
+        <div class="card-custom anonymous-card text-center">
+            <div class="anonymous-icon mb-3">
+                <i class="bi bi-mortarboard"></i>
             </div>
-        </section>
-        <section class="hero-visual">
-            <div class="mini-card">
-                <div class="d-flex align-items-center justify-content-between gap-3">
-                    <div>
-                        <div class="small opacity-75">Стан системи</div>
-                        <div class="h4 mb-0 text-white">Готова до роботи</div>
-                    </div>
-                    <i class="bi bi-check2-circle fs-1"></i>
+            <h1 class="mb-2">Портал автошколи DriveForce</h1>
+            <p class="text-muted mb-4">Увійдіть, щоб переглянути розклад занять, навчальні групи, практику та особисті дані.</p>
+            <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg px-5 mb-3">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
+            </a>
+            <p class="text-muted small mb-4">Акаунти створює адміністратор автошколи.</p>
+            <div class="anonymous-features">
+                <div class="anonymous-feature">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Розклад занять</span>
+                </div>
+                <div class="anonymous-feature">
+                    <i class="bi bi-people"></i>
+                    <span>Навчальні групи</span>
+                </div>
+                <div class="anonymous-feature">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Оплати та доступи</span>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
 }
 else if (isAdmin)
@@ -60,7 +73,7 @@ else if (isAdmin)
                 <div class="d-flex justify-content-between align-items-center gap-3">
                     <div>
                         <div class="text-muted small fw-bold text-uppercase mb-1">Дохід</div>
-                        <div class="fs-3 fw-bold">@ViewBag.TotalRevenue.ToString("N0") ₴</div>
+                        <div class="fs-3 fw-bold">@ViewBag.TotalRevenue.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ₴</div>
                     </div>
                     <div class="stat-icon"><i class="bi bi-wallet2 fs-4"></i></div>
                 </div>
@@ -342,7 +355,7 @@ else if (isStudent)
             <div class="col-12 col-lg-4">
                 <div class="stat-card">
                     <div class="text-muted small fw-bold text-uppercase mb-1">Баланс</div>
-                    <div class="display-6 fw-bold">@ViewBag.StudentBalance.ToString("N0") ₴</div>
+                    <div class="display-6 fw-bold">@ViewBag.StudentBalance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ₴</div>
                     <div class="text-muted">Категорія @student.TargetCategory</div>
                 </div>
             </div>

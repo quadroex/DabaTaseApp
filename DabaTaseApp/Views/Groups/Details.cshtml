@@ -42,11 +42,14 @@
         <div class="col-md-8">
             <div class="card-custom h-100 bg-light border-0 p-4">
                 <h5 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>Швидкий імпорт учнів у цю групу</h5>
-                <p class="small text-muted">Оберіть .xlsx-файл, щоб миттєво додати учнів до складу цієї групи.</p>
-                <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3">
+                <p class="small text-muted">Формат: ПІБ учня | Категорія. Тільки .xlsx. Якщо є помилки — завантажиться лог-файл із деталями.</p>
+                <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3 align-items-center">
                     <input type="hidden" name="groupId" value="@Model.Id" />
+                    <a asp-action="StudentsTemplate" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Шаблон
+                    </a>
                     <input type="file" name="fileExcel" class="form-control" accept=".xlsx" required />
-                    <button type="submit" class="btn btn-warning px-4 fw-bold">Завантажити</button>
+                    <button type="submit" class="btn btn-warning px-4 fw-bold flex-shrink-0">Завантажити</button>
                 </form>
             </div>
         </div>
@@ -78,7 +81,7 @@
                     <td><span class="badge bg-light text-dark border">@s.TargetCategory</span></td>
                     @if (canManage)
                     {
-                        <td class="text-@(s.Balance < 0 ? "danger" : "success") fw-bold">@s.Balance.ToString("N2") ₴</td>
+                        <td class="text-@(s.Balance < 0 ? "danger" : "success") fw-bold">@s.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ₴</td>
                     }
                     <td class="text-end pe-4">
                         <a asp-controller="Students" asp-action="Details" asp-route-id="@s.Id" class="btn-action"><i class="bi bi-eye"></i></a>

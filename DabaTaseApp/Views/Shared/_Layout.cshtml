@@ -110,7 +110,7 @@
         </nav>
     </header>
 
-    @if (!isIdentityPage)
+    @if (!isIdentityPage && ViewData["HidePageHeader"] == null)
     {
         <section class="page-header">
             <div class="container-fluid px-3 px-lg-5">

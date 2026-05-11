@@ -1,61 +1,53 @@
-﻿@model DabaTaseApp.Models.TheorySession
+@model DabaTaseApp.Models.TheorySession
 
 @{
+    ViewData["Title"] = "Деталі заняття з теорії";
     var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
+    var statusClass = Model.Status switch
+    {
+        "Заплановано" => "status-planned",
+        "Триває" => "status-ongoing",
+        "Завершено" => "status-done",
+        _ => "status-cancelled"
+    };
 }
 
-<!DOCTYPE html>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Теорія</p>
+        <h1 class="mb-0">Заняття з теорії</h1>
+    </div>
+    <div class="d-flex gap-2">
+        @if (canManage)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-2"></i>Редагувати
+            </a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Назад
+        </a>
+    </div>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Деталі</title>
-</head>
-<body>
+<div class="card-custom">
+    <dl class="row mb-0">
+        <dt class="col-sm-3 text-muted">Початок</dt>
+        <dd class="col-sm-9 fw-bold">@Model.StartTime.ToString("dd.MM.yyyy HH:mm")</dd>
 
-<div>
-    <h4>Теоретичні заняття</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndTime)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndTime)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Location)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Location)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Group)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Group.GroupName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Instructor)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Instructor.FullName)
-        </dd>
+        <dt class="col-sm-3 text-muted">Закінчення</dt>
+        <dd class="col-sm-9">@Model.EndTime.ToString("dd.MM.yyyy HH:mm")</dd>
+
+        <dt class="col-sm-3 text-muted">Аудиторія</dt>
+        <dd class="col-sm-9"><span class="status-badge status-planned">@Model.Location</span></dd>
+
+        <dt class="col-sm-3 text-muted">Статус</dt>
+        <dd class="col-sm-9"><span class="status-badge @statusClass">@Model.Status</span></dd>
+
+        <dt class="col-sm-3 text-muted">Група</dt>
+        <dd class="col-sm-9 fw-bold">@(Model.Group?.GroupName ?? "—")</dd>
+
+        <dt class="col-sm-3 text-muted">Інструктор</dt>
+        <dd class="col-sm-9">@(Model.Instructor?.FullName ?? "—")</dd>
     </dl>
 </div>
-<div>
-    @if (canManage)
-    {
-        <a asp-action="Edit" asp-route-id="@Model?.Id">Редагувати</a>
-        <span>|</span>
-    }
-    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
-</div>
-</body>
-</html>

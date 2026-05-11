@@ -1,58 +1,57 @@
-﻿@model DabaTaseApp.Models.Group
+@model DabaTaseApp.Models.Group
 
 @{
-    
+    ViewData["Title"] = "Редагувати групу";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Редагувати</title>
-</head>
-<body>
-
-<h4>Групи</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="mb-3">
-                <label asp-for="GroupName" class="control-label"></label>
-                <input asp-for="GroupName" class="form-control" />
-                <span asp-validation-for="GroupName" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="TheoryInstructorId" class="control-label"></label>
-                <select asp-for="TheoryInstructorId" class="form-control" asp-items="ViewBag.TheoryInstructorId"></select>
-                <span asp-validation-for="TheoryInstructorId" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="StartDate" class="control-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="EndDate" class="control-label"></label>
-                <input asp-for="EndDate" class="form-control" />
-                <span asp-validation-for="EndDate" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <input type="submit" value="Зберегти" class="btn btn-primary" />
-            </div>
-        </form>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Групи</p>
+        <h1 class="mb-0">Редагувати групу</h1>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
+<div class="card-custom">
+    <form asp-action="Edit" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="col-12 text-danger"></div>
+        <input type="hidden" asp-for="Id" />
+
+        <div class="col-12 col-lg-4">
+            <label asp-for="GroupName" class="form-label">Назва групи</label>
+            <input asp-for="GroupName" class="form-control" />
+            <span asp-validation-for="GroupName" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <label asp-for="TheoryInstructorId" class="form-label">Інструктор теорії</label>
+            <select asp-for="TheoryInstructorId" class="form-select" asp-items="ViewBag.TheoryInstructorId"></select>
+            <span asp-validation-for="TheoryInstructorId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4">
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <label asp-for="StartDate" class="form-label">Дата початку</label>
+            <input asp-for="StartDate" class="form-control" type="date" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <label asp-for="EndDate" class="form-label">Дата закінчення</label>
+            <input asp-for="EndDate" class="form-control" type="date" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2 me-2"></i>Зберегти
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
-</body>
-</html>

@@ -30,7 +30,7 @@
                 {
                     <dt class="col-sm-4 text-muted">Поточний баланс</dt>
                     <dd class="col-sm-8 fs-5 fw-bold text-@(Model.Balance < 0 ? "danger" : "success")">
-                        @Model.Balance.ToString("N2") ₴
+                        @Model.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ₴
                     </dd>
                 }
                 @if (canManage)

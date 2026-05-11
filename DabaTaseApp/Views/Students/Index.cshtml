@@ -4,14 +4,29 @@
     ViewData["Title"] = "Учні";
     var canManage = User.IsInRole(AppRoles.Admin);
     var isInstructor = User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin);
+    var isStudent = User.IsInRole(AppRoles.Student) && !User.IsInRole(AppRoles.Admin);
     var currentStudentId = ViewBag.CurrentStudentId as int?;
+
+    var heading = canManage
+        ? "Керування учнями"
+        : isInstructor ? "Учні моїх груп" : "Учні моєї групи";
+
+    var subtitle = canManage
+        ? "Картки, групи, баланс та прив'язка до акаунтів."
+        : isInstructor
+            ? "Перегляд учнів у групах, де ви призначені інструктором теорії."
+            : "Список учнів вашої навчальної групи.";
+
+    var emptyText = canManage
+        ? "Дані з'являться після створення або прив'язки картки учня."
+        : "У доступних вам групах учнів не знайдено.";
 }
 
 <div class="surface-toolbar">
     <div>
         <p class="eyebrow mb-2">Навчання</p>
-        <h1 class="mb-0">Керування учнями</h1>
-        <p class="text-muted mb-0">Картки, групи, баланс та прив'язка до акаунтів.</p>
+        <h1 class="mb-0">@heading</h1>
+        <p class="text-muted mb-0">@subtitle</p>
     </div>
     @if (canManage)
     {
@@ -27,7 +42,7 @@
         <div class="empty-state">
             <i class="bi bi-mortarboard"></i>
             <h5>Учнів не знайдено</h5>
-            <p>Дані з'являться після створення або прив'язки картки учня.</p>
+            <p>@emptyText</p>
         </div>
     }
     else
@@ -60,7 +75,7 @@
                             {
                                 <td>
                                     <span class="fw-bold text-@(item.Balance < 0 ? "danger" : "success")">
-                                        @item.Balance.ToString("N2") ₴
+                                        @item.Balance.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ₴
                                     </span>
                                 </td>
                             }
@@ -74,7 +89,7 @@
                                 <div class="d-flex justify-content-end gap-2">
                                     @if (canViewDetails)
                                     {
-                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn-action text-info" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
                                     }
                                     @if (canManage)
                                     {

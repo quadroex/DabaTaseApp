@@ -430,14 +430,64 @@ h5 {
 .hero-visual {
     min-height: 320px;
     border-radius: var(--radius);
-    background:
-        linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(23, 32, 29, 0.94)),
-        url("https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80") center/cover;
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(23, 32, 29, 0.94));
     color: #fff;
     padding: 1.4rem;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+}
+
+.anonymous-home {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 3rem 1rem;
+}
+
+.anonymous-card {
+    max-width: 720px;
+    width: 100%;
+    padding: 3rem 2rem;
+}
+
+.anonymous-icon {
+    font-size: 3.5rem;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.anonymous-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.anonymous-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.anonymous-feature i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+@media (max-width: 576px) {
+    .anonymous-card {
+        padding: 2rem 1rem;
+    }
+
+    .anonymous-features {
+        grid-template-columns: 1fr;
+    }
 }
 
 .hero-visual .mini-card {
@@ -486,10 +536,10 @@ h5 {
 .auth-shell {
     min-height: calc(100vh - 150px);
     display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.72fr);
+    grid-template-columns: 1fr 1fr;
     align-items: center;
-    gap: 1rem;
-    max-width: 1120px;
+    gap: 1.5rem;
+    max-width: 960px;
     margin: 2rem auto;
 }
 
@@ -505,12 +555,35 @@ h5 {
 .auth-copy {
     min-height: 420px;
     color: #fff;
-    background:
-        linear-gradient(135deg, rgba(23, 32, 29, 0.94), rgba(15, 118, 110, 0.88)),
-        url("https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=1200&q=80") center/cover;
+    background: linear-gradient(150deg, #134e4a 0%, #0f766e 55%, #0d9488 100%);
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: center;
+    padding: 2.5rem;
+    border-radius: var(--radius);
+}
+
+.auth-brand-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.25rem;
+    opacity: 0.95;
+}
+
+.auth-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+}
+
+.auth-feature-list li {
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    opacity: 0.9;
+}
+
+.auth-feature-list li:last-child {
+    border-bottom: none;
 }
 
 .auth-copy h1,

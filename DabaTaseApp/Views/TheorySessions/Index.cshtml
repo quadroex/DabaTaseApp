@@ -4,13 +4,20 @@
     ViewData["Title"] = "Теоретичні заняття";
     var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
     var canDelete = User.IsInRole(AppRoles.Admin);
+    var isInstructorOnly = User.IsInRole(AppRoles.Instructor) && !User.IsInRole(AppRoles.Admin);
     var showInstructorName = !User.IsInRole(AppRoles.Instructor) || User.IsInRole(AppRoles.Admin);
+
+    var heading = User.IsInRole(AppRoles.Admin)
+        ? "Розклад теоретичних занять"
+        : User.IsInRole(AppRoles.Instructor)
+            ? "Мої теоретичні заняття"
+            : "Теорія моєї групи";
 }
 
 <div class="surface-toolbar">
     <div>
         <p class="eyebrow mb-2">Теорія</p>
-        <h1 class="mb-0">Заняття з теорії</h1>
+        <h1 class="mb-0">@heading</h1>
         <p class="text-muted mb-0">Лекційний розклад із актуальними статусами.</p>
     </div>
     @if (canManage)
@@ -52,6 +59,8 @@
                             _ => "status-cancelled"
                         };
                         var canCancel = canManage && item.Status != "Скасовано" && item.Status != "Завершено";
+                        var isDone = item.Status == "Завершено" || item.Status == "Скасовано";
+                        var canEdit = canManage && !(isInstructorOnly && isDone);
                         <tr>
                             <td>
                                 <div class="fw-bold">@item.StartTime.ToString("dd.MM.yyyy")</div>
@@ -69,7 +78,7 @@
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" aria-label="Деталі"><i class="bi bi-info-circle"></i></a>
-                                    @if (canManage)
+                                    @if (canEdit)
                                     {
                                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action text-primary" aria-label="Редагувати"><i class="bi bi-pencil-square"></i></a>
                                     }

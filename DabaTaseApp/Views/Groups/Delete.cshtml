@@ -1,54 +1,41 @@
-﻿@model DabaTaseApp.Models.Group
+@model DabaTaseApp.Models.Group
 
 @{
-    
+    ViewData["Title"] = "Видалити групу";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Видалити</title>
-</head>
-<body>
-
-<h3>Ви впевнені, що хочете видалити?</h3>
-<div>
-    <h4>Групи</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.GroupName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.GroupName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TheoryInstructor)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TheoryInstructor.FullName)
-        </dd>
-    </dl>
-    
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Видалити" class="btn btn-danger" /> |
-        <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
-    </form>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Групи</p>
+        <h1 class="mb-0 text-danger">Підтвердження видалення</h1>
+    </div>
 </div>
-</body>
-</html>
+
+<div class="card-custom">
+    <p class="text-danger mb-3">Ви впевнені, що хочете видалити цю групу?</p>
+    <dl class="row mb-4">
+        <dt class="col-sm-3 text-muted">Назва групи</dt>
+        <dd class="col-sm-9 fw-bold text-primary">@Model.GroupName</dd>
+
+        <dt class="col-sm-3 text-muted">Початок навчання</dt>
+        <dd class="col-sm-9">@Model.StartDate.ToShortDateString()</dd>
+
+        <dt class="col-sm-3 text-muted">Кінець навчання</dt>
+        <dd class="col-sm-9">@Model.EndDate.ToShortDateString()</dd>
+
+        <dt class="col-sm-3 text-muted">Інструктор теорії</dt>
+        <dd class="col-sm-9">@(Model.TheoryInstructor?.FullName ?? "Не призначено")</dd>
+    </dl>
+
+    <div class="d-flex gap-2">
+        <form asp-action="Delete" method="post" class="d-inline">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash3 me-2"></i>Видалити
+            </button>
+        </form>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Назад
+        </a>
+    </div>
+</div>

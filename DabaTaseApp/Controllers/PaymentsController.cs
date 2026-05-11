@@ -112,6 +112,7 @@ namespace DabaTaseApp.Controllers
                 return NotFound();
             }
 
+            ViewBag.AmountDisplay = payment.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
             await PopulateStudentsAsync(payment.StudentId);
             return View(payment);
         }

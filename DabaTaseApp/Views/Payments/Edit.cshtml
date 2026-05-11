@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Редагувати платіж";
+    var amountDisplay = ViewBag.AmountDisplay as string ?? Model.Amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 }
 
 <div class="surface-toolbar">
@@ -14,7 +15,7 @@
 <div class="card-custom">
     <form asp-action="Edit" class="row g-3">
         <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div asp-validation-summary="ModelOnly" class="col-12 text-danger"></div>
 
         <div class="col-12 col-lg-4">
             <label asp-for="StudentId" class="form-label"></label>
@@ -23,8 +24,13 @@
         </div>
 
         <div class="col-12 col-lg-4">
-            <label asp-for="Amount" class="form-label">Сума</label>
-            <input asp-for="Amount" type="text" inputmode="decimal" class="form-control" placeholder="Наприклад: 100,50" autocomplete="off" />
+            <label class="form-label">Сума</label>
+            <input type="text" inputmode="decimal" class="form-control"
+                   id="Amount" name="Amount"
+                   value="@amountDisplay"
+                   autocomplete="off"
+                   data-val="true"
+                   data-val-number="Вкажіть коректну суму: додатне число з максимум двома знаками після крапки або коми." />
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
 

@@ -131,6 +131,7 @@ namespace DabaTaseApp.Controllers
         }
 
         // GET: Vehicles/Delete/5
+        [Authorize(Roles = DabaTaseApp.Security.AppRoles.Admin)]
         public async Task<IActionResult> Delete(string id)
         {
             if (id == null)
@@ -149,6 +150,7 @@ namespace DabaTaseApp.Controllers
         }
 
         // POST: Vehicles/Delete/5
+        [Authorize(Roles = DabaTaseApp.Security.AppRoles.Admin)]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)

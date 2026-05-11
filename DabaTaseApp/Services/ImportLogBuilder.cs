@@ -30,8 +30,9 @@ namespace DabaTaseApp.Services
             sb.AppendLine();
             sb.AppendLine("ПІДСУМОК");
             sb.AppendLine($"Успішно збережено рядків: {SuccessCount}");
-            sb.AppendLine($"Пропущено рядків (помилок): {ErrorCount}");
+            sb.AppendLine($"Пропущено рядків через помилки: {ErrorCount}");
             sb.AppendLine($"Попереджень: {WarningCount}");
+            sb.AppendLine($"Збоїв: {FailureCount}");
             if (savedToDb.HasValue)
                 sb.AppendLine($"Збережено в базу даних: {(savedToDb.Value ? "так" : "ні")}");
             return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(sb.ToString());

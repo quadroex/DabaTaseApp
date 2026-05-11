@@ -1,48 +1,42 @@
-﻿@model DabaTaseApp.Models.Category
+@model DabaTaseApp.Models.Category
 
 @{
-    
+    ViewData["Title"] = "Редагувати категорію";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Редагувати</title>
-</head>
-<body>
-
-<h4>Категорії</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="mb-3">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+<div class="surface-toolbar">
+    <div>
+        <p class="eyebrow mb-2">Категорії</p>
+        <h1 class="mb-0">Редагувати категорію</h1>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index" class="btn btn-link text-muted">Назад</a>
+<div class="card-custom">
+    <form asp-action="Edit" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="col-12 text-danger"></div>
+        <input type="hidden" asp-for="Id" />
+
+        <div class="col-12 col-lg-4">
+            <label asp-for="Name" class="form-label">Назва</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <label asp-for="Description" class="form-label">Опис</label>
+            <input asp-for="Description" class="form-control" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2 me-2"></i>Зберегти
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
-</body>
-</html>

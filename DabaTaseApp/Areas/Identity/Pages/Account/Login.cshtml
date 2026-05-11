@@ -7,20 +7,24 @@
 
 <div class="auth-shell">
     <section class="auth-panel auth-copy">
-        <p class="eyebrow">DriveForce Control</p>
-        <h1>Увійдіть у робочий кабінет</h1>
-        <p>Єдиний простір для адміністраторів, інструкторів та учнів автошколи.</p>
-        <div class="auth-metrics">
-            <span><strong>3</strong> ролі</span>
-            <span><strong>24/7</strong> доступ</span>
-            <span><strong>RBAC</strong> захист</span>
+        <div class="auth-brand-icon">
+            <i class="bi bi-mortarboard"></i>
         </div>
+        <h1>Портал автошколи</h1>
+        <p>Платформа для адміністраторів, інструкторів та учнів автошколи.</p>
+        <ul class="auth-feature-list">
+            <li><i class="bi bi-calendar-check me-2"></i>Розклад теорії та практики</li>
+            <li><i class="bi bi-people me-2"></i>Навчальні групи та учні</li>
+            <li><i class="bi bi-person-badge me-2"></i>Особистий профіль та баланс</li>
+        </ul>
     </section>
 
     <section class="auth-panel">
         <form method="post" class="auth-form">
+            <h2 class="mb-1">Вхід до порталу автошколи</h2>
+            <p class="text-muted mb-4">Увійдіть, щоб переглянути розклад занять, навчальні групи та особисті дані.</p>
             <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary mb-3"></div>
 
             <div class="mb-3">
                 <label asp-for="Input.Email" class="form-label">Email</label>
@@ -36,7 +40,7 @@
 
             <div class="form-check mb-4">
                 <input asp-for="Input.RememberMe" class="form-check-input" />
-                <label asp-for="Input.RememberMe" class="form-check-label"></label>
+                <label asp-for="Input.RememberMe" class="form-check-label">Запам'ятати мене</label>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-100">
@@ -44,7 +48,7 @@
             </button>
 
             <div class="auth-switch">
-                Немає акаунта? Зверніться до адміністратора.
+                Немає акаунта? Зверніться до адміністратора автошколи.
             </div>
         </form>
     </section>
