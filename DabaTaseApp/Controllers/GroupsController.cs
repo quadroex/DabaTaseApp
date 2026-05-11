@@ -169,7 +169,7 @@ namespace DabaTaseApp.Controllers
                 worksheet.Cell(currentRow, 2).Value = student.TargetCategory;
                 worksheet.Cell(currentRow, 3).Value = student.Balance;
                 worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = "0.00";
-                worksheet.Cell(currentRow, 4).Value = student.ApplicationUser?.Email ?? "—";
+                worksheet.Cell(currentRow, 4).Value = student.ApplicationUser?.Email ?? "-";
             }
 
             worksheet.Columns().AdjustToContents();
@@ -192,12 +192,12 @@ namespace DabaTaseApp.Controllers
             ws.Range(1, 1, 1, 4).Style.Font.Bold = true;
             ws.Range(1, 1, 1, 4).Style.Fill.BackgroundColor = XLColor.LightBlue;
 
-            ws.Cell(2, 1).Value = "Група-А-2025";
+            ws.Cell(2, 1).Value = "xx";
             ws.Cell(2, 2).Value = "01.09.2025";
             ws.Cell(2, 3).Value = "31.12.2025";
-            ws.Cell(2, 4).Value = "Петренко Іван Іванович";
+            ws.Cell(2, 4).Value = "Іванченко Іван Іванович";
 
-            ws.Cell(1, 6).Value = "Формат дат: dd.MM.yyyy  |  Інструктор — необов'язково";
+            ws.Cell(1, 6).Value = "Формат дат: dd.MM.yyyy  |  Інструктор - необов'язково";
             ws.Cell(1, 6).Style.Font.Italic = true;
             ws.Cell(1, 6).Style.Font.FontColor = XLColor.Gray;
 
@@ -353,7 +353,7 @@ namespace DabaTaseApp.Controllers
 
                     if (endDate < startDate)
                     {
-                        log.AddError($"Рядок {rn}, комірки B{rn}–C{rn}: дата закінчення раніше дати початку. Рядок пропущено.");
+                        log.AddError($"Рядок {rn}, комірки B{rn}-C{rn}: дата закінчення раніше дати початку. Рядок пропущено.");
                         continue;
                     }
 
