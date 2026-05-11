@@ -1,0 +1,58 @@
+@model DabaTaseApp.Models.ViewModels.UserRoleViewModel
+
+@{
+    ViewData["Title"] = "Видалення акаунта";
+}
+
+<div class="card-custom" style="max-width:600px;">
+    <h5 class="fw-bold mb-4 text-danger">
+        <i class="bi bi-trash3 me-2"></i>Підтвердження видалення акаунта
+    </h5>
+
+    <dl class="row mb-4">
+        <dt class="col-sm-4">Email</dt>
+        <dd class="col-sm-8">@Model.Email</dd>
+
+        <dt class="col-sm-4">Ім'я користувача</dt>
+        <dd class="col-sm-8">@Model.UserName</dd>
+
+        <dt class="col-sm-4">Ролі</dt>
+        <dd class="col-sm-8">
+            @if (Model.Roles.Count == 0)
+            {
+                <span class="text-muted">без ролі</span>
+            }
+            @foreach (var role in Model.Roles)
+            {
+                <span class="role-chip role-chip-@role">@AppRoleDisplay.Name(role)</span>
+            }
+        </dd>
+
+        <dt class="col-sm-4">Профіль</dt>
+        <dd class="col-sm-8">@Model.ProfileStatus</dd>
+    </dl>
+
+    @if (Model.HasLinkedProfile)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Спочатку відв'яжіть акаунт від картки профілю.
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">Назад</a>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            Буде видалено тільки акаунт для входу. Картки учня або інструктора не видаляються.
+        </div>
+
+        <form asp-action="Delete" method="post" class="d-flex gap-2">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash3 me-1"></i>Видалити акаунт
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">Назад</a>
+        </form>
+    }
+</div>

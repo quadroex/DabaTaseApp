@@ -42,7 +42,7 @@
         <div class="col-md-8">
             <div class="card-custom h-100 bg-light border-0 p-4">
                 <h5 class="fw-bold mb-3"><i class="bi bi-upload me-2"></i>Швидкий імпорт учнів у цю групу</h5>
-                <p class="small text-muted">Формат: ПІБ учня | Категорія. Тільки .xlsx. Якщо є помилки — завантажиться лог-файл із деталями.</p>
+                <p class="small text-muted">Формат: ПІБ учня | Категорія | Email акаунта (необов'язково). Тільки .xlsx. Якщо email вказано — буде створено акаунт із паролем <strong>123456</strong>. Якщо є помилки — завантажиться лог-файл із деталями.</p>
                 <form asp-action="ImportStudents" enctype="multipart/form-data" method="post" class="d-flex gap-2 mt-3 align-items-center">
                     <input type="hidden" name="groupId" value="@Model.Id" />
                     <a asp-action="StudentsTemplate" class="btn btn-outline-secondary btn-sm flex-shrink-0">

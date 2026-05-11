@@ -204,6 +204,81 @@ namespace DabaTaseApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin))
+            {
+                TempData["ErrorMessage"] = "Акаунти адміністраторів не можна видаляти.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var isLinked = await _context.Students.AnyAsync(s => s.ApplicationUserId == id)
+                        || await _context.Instructors.AnyAsync(i => i.ApplicationUserId == id);
+
+            if (isLinked)
+            {
+                TempData["ErrorMessage"] = "Спочатку відв'яжіть акаунт від картки учня або інструктора.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            return View(new UserRoleViewModel
+            {
+                Id = user.Id,
+                Email = user.Email ?? string.Empty,
+                UserName = user.UserName ?? string.Empty,
+                Roles = [.. roles],
+                HasLinkedProfile = false,
+                ProfileStatus = roles.Contains(AppRoles.Admin) ? "Адміністратор" : "Немає профілю"
+            });
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            var currentUserId = _userManager.GetUserId(User);
+            if (user.Id == currentUserId)
+            {
+                TempData["ErrorMessage"] = "Не можна видалити власний акаунт.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin))
+            {
+                TempData["ErrorMessage"] = "Акаунти адміністраторів не можна видаляти.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var isLinked = await _context.Students.AnyAsync(s => s.ApplicationUserId == id)
+                        || await _context.Instructors.AnyAsync(i => i.ApplicationUserId == id);
+            if (isLinked)
+            {
+                TempData["ErrorMessage"] = "Спочатку відв'яжіть акаунт від картки учня або інструктора.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Акаунт видалено.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Помилка видалення: " + string.Join(" ", result.Errors.Select(e => e.Description));
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         private async Task<UsersIndexViewModel> BuildIndexModelAsync()
         {
             var users = await _userManager.Users

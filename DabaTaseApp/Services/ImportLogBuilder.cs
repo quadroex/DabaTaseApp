@@ -20,7 +20,7 @@ namespace DabaTaseApp.Services
         public void AddError(string message) { Add("ПОМИЛКА", message); ErrorCount++; }
         public void AddFailure(string message) { Add("ЗБІЙ", message); FailureCount++; }
 
-        public byte[] BuildBytes(string header, bool? savedToDb = null)
+        public byte[] BuildBytes(string header, bool? savedToDb = null, string? extraSummaryLine = null)
         {
             var sb = new StringBuilder();
             sb.AppendLine(header);
@@ -33,6 +33,8 @@ namespace DabaTaseApp.Services
             sb.AppendLine($"Пропущено рядків через помилки: {ErrorCount}");
             sb.AppendLine($"Попереджень: {WarningCount}");
             sb.AppendLine($"Збоїв: {FailureCount}");
+            if (extraSummaryLine != null)
+                sb.AppendLine(extraSummaryLine);
             if (savedToDb.HasValue)
                 sb.AppendLine($"Збережено в базу даних: {(savedToDb.Value ? "так" : "ні")}");
             return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(sb.ToString());

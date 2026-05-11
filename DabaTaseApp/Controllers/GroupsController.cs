@@ -3,11 +3,14 @@ using DabaTaseApp.Models;
 using DabaTaseApp.Security;
 using DabaTaseApp.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
+using Group = DabaTaseApp.Models.Group;
 
 namespace DabaTaseApp.Controllers
 {
@@ -15,10 +18,15 @@ namespace DabaTaseApp.Controllers
     public class GroupsController : Controller
     {
         private readonly Lab1Context _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public GroupsController(Lab1Context context)
+        private const string ImportedStudentDefaultPassword = "123456";
+        private static readonly Regex EmailRegex = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
+
+        public GroupsController(Lab1Context context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
@@ -193,8 +201,8 @@ namespace DabaTaseApp.Controllers
             ws.Range(1, 1, 1, 4).Style.Fill.BackgroundColor = XLColor.LightBlue;
 
             ws.Cell(2, 1).Value = "xx";
-            ws.Cell(2, 2).Value = "01.09.2025";
-            ws.Cell(2, 3).Value = "31.12.2025";
+            ws.Cell(2, 2).Value = "01.09.2026";
+            ws.Cell(2, 3).Value = "31.12.2026";
             ws.Cell(2, 4).Value = "Іванченко Іван Іванович";
 
             ws.Cell(1, 6).Value = "Формат дат: dd.MM.yyyy  |  Інструктор - необов'язково";
@@ -222,16 +230,22 @@ namespace DabaTaseApp.Controllers
 
             ws.Cell(1, 1).Value = "ПІБ учня";
             ws.Cell(1, 2).Value = "Категорія";
-            ws.Cell(1, 4).Value = "Доступні категорії:";
-            ws.Range(1, 1, 1, 2).Style.Font.Bold = true;
-            ws.Range(1, 1, 1, 2).Style.Fill.BackgroundColor = XLColor.LightBlue;
-            ws.Cell(1, 4).Style.Font.Bold = true;
+            ws.Cell(1, 3).Value = "Email акаунта";
+            ws.Cell(1, 5).Value = "Доступні категорії:";
+            ws.Range(1, 1, 1, 3).Style.Font.Bold = true;
+            ws.Range(1, 1, 1, 3).Style.Fill.BackgroundColor = XLColor.LightBlue;
+            ws.Cell(1, 5).Style.Font.Bold = true;
 
             ws.Cell(2, 1).Value = "Іваненко Іван Іванович";
             ws.Cell(2, 2).Value = categories.FirstOrDefault() ?? "B";
+            ws.Cell(2, 3).Value = "ivan@example.com";
+
+            ws.Cell(1, 4).Value = "Email — необов'язково. Якщо вказано — буде створено акаунт із паролем 123456.";
+            ws.Cell(1, 4).Style.Font.Italic = true;
+            ws.Cell(1, 4).Style.Font.FontColor = XLColor.Gray;
 
             for (int i = 0; i < categories.Count; i++)
-                ws.Cell(i + 2, 4).Value = categories[i];
+                ws.Cell(i + 2, 5).Value = categories[i];
 
             ws.Columns().AdjustToContents();
 
@@ -452,9 +466,10 @@ namespace DabaTaseApp.Controllers
                     .Select(s => s.FullName)
                     .ToListAsync(),
                 StringComparer.OrdinalIgnoreCase);
-            var processedInThisFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var processedNamesInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var processedEmailsInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var validStudents = new List<(int RowNumber, string Name, Student Entity)>();
+            var validStudents = new List<(int RowNumber, string Name, string Category, string? Email)>();
 
             try
             {
@@ -470,14 +485,18 @@ namespace DabaTaseApp.Controllers
                     return File(log.BuildBytes(header, savedToDb: false), "text/plain", BuildLogName("Students_Import"));
                 }
 
-                // Non-fatal header check
                 var sh1 = worksheet.Cell(1, 1).GetValue<string>()?.Trim() ?? "";
                 var sh2 = worksheet.Cell(1, 2).GetValue<string>()?.Trim() ?? "";
                 if (!string.Equals(sh1, "ПІБ учня", StringComparison.OrdinalIgnoreCase) ||
                     !string.Equals(sh2, "Категорія", StringComparison.OrdinalIgnoreCase))
                 {
-                    log.AddWarning("Заголовки файлу відрізняються від очікуваних. Імпорт продовжено за позиціями колонок.");
+                    log.AddWarning("Заголовки файлу відрізняються від очікуваних (A1, B1). Імпорт продовжено за позиціями колонок.");
                 }
+
+                var sh3 = worksheet.Cell(1, 3).GetValue<string>()?.Trim() ?? "";
+                var hasEmailColumn = string.Equals(sh3, "Email акаунта", StringComparison.OrdinalIgnoreCase);
+                if (!hasEmailColumn && !string.IsNullOrWhiteSpace(sh3))
+                    log.AddWarning("Заголовок колонки C (Email акаунта) не розпізнано. Email-колонка ігнорується.");
 
                 var lastStudentRow = usedRange.LastRow().RowNumber();
                 if (lastStudentRow < 2)
@@ -490,16 +509,19 @@ namespace DabaTaseApp.Controllers
                 {
                     var row = worksheet.Row(r);
                     var rn = r;
-                    var name = row.Cell(1).GetValue<string>()?.Trim();
+                    var rawName = row.Cell(1).GetValue<string>();
                     var categoryInput = row.Cell(2).GetValue<string>()?.Trim();
+                    var rawEmail = hasEmailColumn ? row.Cell(3).GetValue<string>()?.Trim() : null;
 
-                    if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(categoryInput))
+                    var name = NormalizePersonName(rawName);
+
+                    if (string.IsNullOrEmpty(name) && string.IsNullOrWhiteSpace(categoryInput) && string.IsNullOrWhiteSpace(rawEmail))
                     {
                         log.AddWarning($"Рядок {rn}: порожній рядок пропущено.");
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(name))
+                    if (string.IsNullOrEmpty(name))
                     {
                         log.AddError($"Рядок {rn}, комірка A{rn}: ПІБ учня порожнє. Рядок пропущено.");
                         continue;
@@ -511,7 +533,7 @@ namespace DabaTaseApp.Controllers
                         continue;
                     }
 
-                    if (processedInThisFile.Contains(name))
+                    if (processedNamesInFile.Contains(name))
                     {
                         log.AddError($"Рядок {rn}, комірка A{rn}: учень '{name}' дублюється в цьому файлі. Рядок пропущено.");
                         continue;
@@ -523,15 +545,34 @@ namespace DabaTaseApp.Controllers
                         continue;
                     }
 
-                    processedInThisFile.Add(name);
-                    validStudents.Add((rn, name, new Student
+                    string? validatedEmail = null;
+                    if (!string.IsNullOrWhiteSpace(rawEmail))
                     {
-                        FullName = name,
-                        TargetCategory = canonicalCategory,
-                        GroupId = groupId,
-                        Balance = 0,
-                        ApplicationUserId = null
-                    }));
+                        if (!EmailRegex.IsMatch(rawEmail))
+                        {
+                            log.AddError($"Рядок {rn}, комірка C{rn}: невірний формат email '{rawEmail}'. Рядок пропущено.");
+                            continue;
+                        }
+
+                        if (processedEmailsInFile.Contains(rawEmail))
+                        {
+                            log.AddError($"Рядок {rn}, комірка C{rn}: email '{rawEmail}' дублюється в цьому файлі. Рядок пропущено.");
+                            continue;
+                        }
+
+                        var existingUser = await _userManager.FindByEmailAsync(rawEmail);
+                        if (existingUser != null)
+                        {
+                            log.AddError($"Рядок {rn}, комірка C{rn}: email '{rawEmail}' вже зареєстровано в системі. Рядок пропущено.");
+                            continue;
+                        }
+
+                        processedEmailsInFile.Add(rawEmail);
+                        validatedEmail = rawEmail;
+                    }
+
+                    processedNamesInFile.Add(name);
+                    validStudents.Add((rn, name, canonicalCategory, validatedEmail));
                 }
             }
             catch (Exception ex)
@@ -541,17 +582,65 @@ namespace DabaTaseApp.Controllers
             }
 
             bool savedToDb = false;
+            int accountsCreated = 0;
             if (validStudents.Count > 0)
             {
                 await using var tx = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                    _context.Students.AddRange(validStudents.Select(v => v.Entity));
+                    foreach (var v in validStudents)
+                    {
+                        string? userId = null;
+                        if (v.Email != null)
+                        {
+                            var newUser = new IdentityUser
+                            {
+                                UserName = v.Email,
+                                Email = v.Email,
+                                EmailConfirmed = true
+                            };
+                            var createResult = await _userManager.CreateAsync(newUser, ImportedStudentDefaultPassword);
+                            if (!createResult.Succeeded)
+                            {
+                                var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                                log.AddFailure($"Рядок {v.RowNumber}: не вдалося створити акаунт для '{v.Email}': {errors}. Жодного учня не збережено.");
+                                await tx.RollbackAsync();
+                                return File(log.BuildBytes(header, savedToDb: false), "text/plain", BuildLogName("Students_Import"));
+                            }
+                            var roleResult = await _userManager.AddToRoleAsync(newUser, AppRoles.Student);
+                            if (!roleResult.Succeeded)
+                            {
+                                await _userManager.DeleteAsync(newUser);
+                                var roleErrors = string.Join("; ", roleResult.Errors.Select(e => e.Description));
+                                log.AddFailure($"Рядок {v.RowNumber}: не вдалося призначити роль для '{v.Email}': {roleErrors}. Жодного учня не збережено.");
+                                await tx.RollbackAsync();
+                                return File(log.BuildBytes(header, savedToDb: false), "text/plain", BuildLogName("Students_Import"));
+                            }
+                            userId = newUser.Id;
+                            accountsCreated++;
+                        }
+
+                        _context.Students.Add(new Student
+                        {
+                            FullName = v.Name,
+                            TargetCategory = v.Category,
+                            GroupId = groupId,
+                            Balance = 0,
+                            ApplicationUserId = userId
+                        });
+                    }
+
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
                     savedToDb = true;
+
                     foreach (var v in validStudents)
-                        log.AddSuccess($"Рядок {v.RowNumber}: Учня '{v.Name}' збережено в базу даних.");
+                    {
+                        if (v.Email != null)
+                            log.AddSuccess($"Рядок {v.RowNumber}: Учня '{v.Name}' збережено. Створено акаунт {v.Email}.");
+                        else
+                            log.AddSuccess($"Рядок {v.RowNumber}: Учня '{v.Name}' збережено.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -566,7 +655,10 @@ namespace DabaTaseApp.Controllers
                 return RedirectToAction(nameof(Details), new { id = groupId });
             }
 
-            return File(log.BuildBytes(header, savedToDb), "text/plain", BuildLogName("Students_Import"));
+            string? extraLine = accountsCreated > 0
+                ? $"Створено акаунтів учнів: {accountsCreated}. Пароль за замовчуванням: {ImportedStudentDefaultPassword}"
+                : null;
+            return File(log.BuildBytes(header, savedToDb, extraLine), "text/plain", BuildLogName("Students_Import"));
         }
 
         [Authorize(Roles = AppRoles.Admin)]
@@ -668,6 +760,9 @@ namespace DabaTaseApp.Controllers
             TempData["SuccessMessage"] = "Групу видалено.";
             return RedirectToAction(nameof(Index));
         }
+
+        private static string NormalizePersonName(string? raw)
+            => string.IsNullOrWhiteSpace(raw) ? string.Empty : Regex.Replace(raw.Trim(), @"\s+", " ");
 
         private static DateOnly? ParseExcelDate(IXLCell cell)
         {
