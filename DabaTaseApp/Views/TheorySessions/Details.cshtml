@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Деталі заняття з теорії";
-    var canManage = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Instructor);
+    var canManage = User.IsInRole(AppRoles.Admin);
     var statusClass = Model.Status switch
     {
         "Заплановано" => "status-planned",
