@@ -156,6 +156,17 @@ a:hover {
     font-size: 0.86rem;
 }
 
+.user-pill .role-chip {
+    font-size: 0.67rem;
+    min-height: 17px;
+    padding: 0.08rem 0.38rem;
+    margin-top: 0.18rem;
+    align-self: start;
+    justify-self: start;
+    width: fit-content;
+    letter-spacing: 0.03em;
+}
+
 .page-header {
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(12px);

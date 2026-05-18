@@ -211,9 +211,22 @@ namespace DabaTaseApp.Controllers
             if (user == null)
                 return NotFound();
 
-            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin))
+            var currentUserId = _userManager.GetUserId(User);
+            if (user.Id == currentUserId)
             {
-                TempData["ErrorMessage"] = "Акаунти адміністраторів не можна видаляти.";
+                TempData["ErrorMessage"] = "Власний акаунт не можна видалити.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.Equals(user.Email, SuperAdmin.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Акаунт суперадміністратора не можна видаляти.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin) && !SuperAdmin.IsSuperAdmin(User))
+            {
+                TempData["ErrorMessage"] = "Акаунти адміністраторів може видаляти тільки суперадміністратор.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -249,13 +262,19 @@ namespace DabaTaseApp.Controllers
             var currentUserId = _userManager.GetUserId(User);
             if (user.Id == currentUserId)
             {
-                TempData["ErrorMessage"] = "Не можна видалити власний акаунт.";
+                TempData["ErrorMessage"] = "Власний акаунт не можна видалити.";
                 return RedirectToAction(nameof(Index));
             }
 
-            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin))
+            if (string.Equals(user.Email, SuperAdmin.Email, StringComparison.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Акаунти адміністраторів не можна видаляти.";
+                TempData["ErrorMessage"] = "Акаунт суперадміністратора не можна видаляти.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await _userManager.IsInRoleAsync(user, AppRoles.Admin) && !SuperAdmin.IsSuperAdmin(User))
+            {
+                TempData["ErrorMessage"] = "Акаунти адміністраторів може видаляти тільки суперадміністратор.";
                 return RedirectToAction(nameof(Index));
             }
 

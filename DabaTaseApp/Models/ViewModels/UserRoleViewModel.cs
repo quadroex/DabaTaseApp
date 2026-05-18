@@ -50,7 +50,7 @@ public class CreateUserViewModel
 
     [Required(ErrorMessage = "Вкажіть пароль.")]
     [DataType(DataType.Password)]
-    [StringLength(100, MinimumLength = 8, ErrorMessage = "Пароль має містити щонайменше 8 символів.")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "Пароль має містити щонайменше 6 символів.")]
     public string Password { get; set; } = string.Empty;
 
     [DataType(DataType.Password)]

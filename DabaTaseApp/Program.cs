@@ -120,12 +120,22 @@ static async Task SeedIdentityAsync(WebApplication app)
         return;
     }
 
-    await EnsureUserAsync(userManager, "admin@test.com", "Admin!2026", AppRoles.Admin);
-    var demoInstructorUser = await EnsureUserAsync(userManager, "inst@test.com", "Instructor!2026", AppRoles.Instructor);
+    // Demo
+    const string demoAdminEmail = "admin@test.com";
+    const string demoInstructorEmail = "inst@test.com";
+    const string demoStudentEmail = "stud@test.com";
+
+    await EnsureUserAsync(userManager, demoAdminEmail, "Admin!2026", AppRoles.Admin);
+
+    var demoInstructorUser = await EnsureUserAsync(userManager, demoInstructorEmail, "Instructor!2026", AppRoles.Instructor);
     await EnsureDemoInstructorAsync(db, demoInstructorUser);
 
-    var demoStudentUser = await EnsureUserAsync(userManager, "stud@test.com", "Student!2026", AppRoles.Student);
+    var demoStudentUser = await EnsureUserAsync(userManager, demoStudentEmail, "Student!2026", AppRoles.Student);
     await EnsureDemoStudentAsync(db, demoStudentUser);
+    // Demo
+
+    // Super
+    await EnsureUserAsync(userManager, SuperAdmin.Email, "123456", AppRoles.Admin);
 }
 
 static async Task<IdentityUser> EnsureUserAsync(
@@ -242,14 +252,7 @@ static async Task ReconcileProfileLinksAsync(Lab1Context db, UserManager<Identit
             || await db.Payments.AnyAsync(p => p.StudentId == student.Id)
             || await db.PracticeSessions.AnyAsync(p => p.StudentId == student.Id);
 
-        if (!hasHistory && LooksLikeEmail(student.FullName))
-        {
-            db.Students.Remove(student);
-        }
-        else
-        {
-            student.ApplicationUserId = null;
-        }
+        student.ApplicationUserId = null;
     }
 
     var linkedInstructors = await db.Instructors

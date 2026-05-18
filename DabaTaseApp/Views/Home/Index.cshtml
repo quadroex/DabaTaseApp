@@ -62,6 +62,9 @@ else if (isAdmin)
                 <button id="filterBtn" class="btn btn-primary btn-sm">
                     <i class="bi bi-funnel me-1"></i>Застосувати
                 </button>
+                <button id="resetBtn" class="btn btn-outline-secondary btn-sm d-none" type="button">
+                    <i class="bi bi-x-circle me-1"></i>Скинути
+                </button>
             </div>
             <div id="dateRangeError" class="text-danger small mt-2 d-none"></div>
         </div>
@@ -271,9 +274,23 @@ else if (isAdmin)
                 errorNode.textContent = error.message;
             }
 
-            startInput.addEventListener('change', validateDateRange);
-            endInput.addEventListener('change', validateDateRange);
+            const resetBtn = document.getElementById('resetBtn');
+
+            function updateResetBtn() {
+                resetBtn.classList.toggle('d-none', !startInput.value && !endInput.value);
+            }
+
+            startInput.addEventListener('change', function () { validateDateRange(); updateResetBtn(); });
+            endInput.addEventListener('change', function () { validateDateRange(); updateResetBtn(); });
             document.getElementById('filterBtn').addEventListener('click', refreshDashboard);
+            resetBtn.addEventListener('click', function () {
+                startInput.value = '';
+                endInput.value = '';
+                errorNode.classList.add('d-none');
+                errorNode.textContent = '';
+                updateResetBtn();
+                refreshDashboard();
+            });
         </script>
     }
 }

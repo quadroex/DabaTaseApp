@@ -28,7 +28,14 @@
             <select asp-for="NewUser.Role" class="form-select" id="newUserRole">
                 @foreach (var role in Model.AvailableRoles)
                 {
-                    <option value="@role">@AppRoleDisplay.Name(role)</option>
+                    if (role == Model.NewUser.Role)
+                    {
+                        <option value="@role" selected>@AppRoleDisplay.Name(role)</option>
+                    }
+                    else
+                    {
+                        <option value="@role">@AppRoleDisplay.Name(role)</option>
+                    }
                 }
             </select>
             <span asp-validation-for="NewUser.Role" class="text-danger"></span>
@@ -123,10 +130,20 @@
                 </tr>
             </thead>
             <tbody>
+                @{
+                    var currentUserIsSuperAdmin = SuperAdmin.IsSuperAdmin(User);
+                    var currentUserEmail = User.Identity?.Name ?? "";
+                }
                 @foreach (var user in Model.Users)
                 {
                     var isStudent = user.Roles.Contains(AppRoles.Student);
                     var isInstructor = user.Roles.Contains(AppRoles.Instructor);
+                    var isSuperAdminTarget = string.Equals(user.Email, SuperAdmin.Email, StringComparison.OrdinalIgnoreCase);
+                    var isCurrentUser = string.Equals(user.Email, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+                    var canDelete = !user.HasLinkedProfile
+                        && !isCurrentUser
+                        && !isSuperAdminTarget
+                        && (!user.Roles.Contains(AppRoles.Admin) || currentUserIsSuperAdmin);
 
                     <tr>
                         <td>
@@ -196,14 +213,21 @@
                                         <i class="bi bi-shield-lock me-1"></i>Зберегти
                                     </button>
                                 </form>
+                                @if (canDelete)
+                                {
+                                    <div class="text-end mt-2">
+                                        <a asp-action="Delete" asp-route-id="@user.Id"
+                                           class="btn btn-outline-danger btn-sm"
+                                           title="Видалити акаунт"
+                                           aria-label="Видалити акаунт">
+                                            <i class="bi bi-trash3 me-1"></i>Видалити акаунт
+                                        </a>
+                                    </div>
+                                }
                             }
-                            else
+                            else if (canDelete)
                             {
-                                <div class="text-end text-muted small">Адміністратора не можна змінити</div>
-                            }
-                            @if (!user.HasLinkedProfile && !user.Roles.Contains(AppRoles.Admin))
-                            {
-                                <div class="text-end mt-2">
+                                <div class="text-end">
                                     <a asp-action="Delete" asp-route-id="@user.Id"
                                        class="btn btn-outline-danger btn-sm"
                                        title="Видалити акаунт"
@@ -211,6 +235,18 @@
                                         <i class="bi bi-trash3 me-1"></i>Видалити акаунт
                                     </a>
                                 </div>
+                            }
+                            else if (isCurrentUser)
+                            {
+                                <div class="text-end text-muted small">Власний акаунт не можна видалити</div>
+                            }
+                            else if (isSuperAdminTarget)
+                            {
+                                <div class="text-end text-muted small">Акаунт суперадміністратора захищено</div>
+                            }
+                            else
+                            {
+                                <div class="text-end text-muted small">Адміністратора не можна змінити</div>
                             }
                         </td>
                     </tr>

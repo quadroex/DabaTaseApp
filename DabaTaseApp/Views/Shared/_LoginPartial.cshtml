@@ -14,8 +14,9 @@
         var roleLabel = AppRoleDisplay.Name(role);
         var roleClass = string.IsNullOrEmpty(role) ? "none" : role;
 
+        var pillReturnUrl = Context.Request.Path.ToString() + Context.Request.QueryString.ToString();
         <li class="nav-item">
-            <a class="user-pill" asp-area="Identity" asp-page="/Account/Manage/Index">
+            <a class="user-pill" asp-controller="AccountSettings" asp-action="ChangePassword" asp-route-returnUrl="@pillReturnUrl" title="Змінити пароль">
                 <span class="user-avatar"><i class="bi bi-person"></i></span>
                 <span class="user-meta">
                     <span>@User.Identity?.Name</span>
